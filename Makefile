@@ -3,7 +3,7 @@
 #Simply adapt the lines below to be able to compile
 
 # Define project name here
-PROJECT = Project_template
+PROJECT = Project
 
 #Define path to the e-puck2_main-processor folder
 GLOBAL_PATH = ../lib/e-puck2_main-processor
