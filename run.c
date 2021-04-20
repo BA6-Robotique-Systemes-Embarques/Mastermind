@@ -7,8 +7,8 @@
 
 #include <main.h>
 #include <motors.h>
-#include <pi_regulator.h>
 #include <process_image.h>
+#include <run.h>
 
 #define distanceObjectif 10
 #define SPEED_BASE 100 //la vitesse nominale des moteurs
