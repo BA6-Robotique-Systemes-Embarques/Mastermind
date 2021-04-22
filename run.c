@@ -13,8 +13,8 @@
 #define distanceObjectif 10
 #define SPEED_BASE 100 //la vitesse nominale des moteurs
 
-static THD_WORKING_AREA(waPiRegulator, 256);
-static THD_FUNCTION(PiRegulator, arg) {
+static THD_WORKING_AREA(waRun, 256);
+static THD_FUNCTION(Run, arg) {
 
     chRegSetThreadName(__FUNCTION__);
     (void)arg;
@@ -62,11 +62,28 @@ static THD_FUNCTION(PiRegulator, arg) {
 
         		erreur_precedente=erreur;
         }
+        else if(getEtat()=='R'){
+        		chSysLock();//boucle ouverte
+
+
+        		erreur_precedente=0;
+        		erreurtot=0;
+
+        		chSysUnlock();
+        		chBSemSignal(&robot_stopped_sem); //askip elle peut pas être appelée depuis une lock zone
+        }
+        else if(getEtat()=='B'){
+        		chSysLock();
+        		erreur_precedente=0;
+        		erreurtot=0;
+        	    	//boucle ouverte
+        		chSysUnlock();
+        }
         //100Hz
         chThdSleepUntilWindowed(time, time + MS2ST(10));
     }
 }
 
-void pi_regulator_start(void){
-	chThdCreateStatic(waPiRegulator, sizeof(waPiRegulator), NORMALPRIO, PiRegulator, NULL);
+void run_thd_start(void){
+	chThdCreateStatic(waRun, sizeof(waRun), NORMALPRIO, Run, NULL);
 }
