@@ -12,7 +12,8 @@
 static float distance_cm = 0;
 static unsigned int  width;
 static int pos;
-static char etat = 'N'; //N = lighe noir, R = pastille rouge (arrêt), B = pastille bleue (Lire carte)
+static char etat = 'S'; //N = lighe noir, R = pastille rouge (arrêt),
+						//B = pastille bleue (Lire carte), S = start
 
 //GETTERS :
 float getDistanceCM(void){

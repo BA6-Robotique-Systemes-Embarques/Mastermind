@@ -13,34 +13,26 @@
 #include <main.h>
 #include <detectionIR.h>
 #include <sensors/proximity.h>
+#include <leds.h>
 
+#define BACK_PROX_SENSOR	3
+#define MIN_DIST_PROX		20
 
 static THD_WORKING_AREA(waDetectionIR, 256);
 static THD_FUNCTION(DetectionIR, arg) {
 
     chRegSetThreadName(__FUNCTION__);
     (void)arg;
-    messagebus_topic_t *prox_topic = messagebus_find_topic_blocking(&bus, "/proximity");
-    proximity_msg_t prox_values;
 
-    while(1){
-    		//wait for new measures to be published
-    	     messagebus_topic_wait(prox_topic, &prox_values, sizeof(prox_values));
-
-    	     //if (SDU1.config->usbp->state != USB_ACTIVE) {continue;} // Skip printing if port not opened.
-
-    	     int i=2;
-    	     //for (uint8_t i = 0; i < PROXIMITY_NB_CHANNELS; i++)
-    	     //{
-    	     chprintf((BaseSequentialStream *)&SD3, "%4d,", prox_values.ambient[i]);
-    	     chprintf((BaseSequentialStream *)&SD3, "%4d,", prox_values.reflected[i]);
-    	     chprintf((BaseSequentialStream *)&SD3, "%4d", prox_values.delta[i]);
-    	     chprintf((BaseSequentialStream *)&SD3, "\r\n");
-    	     //}
-    	     chprintf((BaseSequentialStream *)&SD3, "\r\n");
-
-    	     chThdSleepMilliseconds(100);
-
+    while(1)
+    {
+    	//Activate led if object very close to back proximity sensor
+    	if (get_prox(BACK_PROX_SENSOR) > MIN_DIST_PROX)
+    	{
+    		set_front_led(1);
+    	}
+    	else {set_front_led(0);}
+   	    chThdSleepMilliseconds(100);
     }
 }
 

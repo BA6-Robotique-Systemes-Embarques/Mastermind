@@ -80,9 +80,30 @@ static THD_FUNCTION(Run, arg) {
         	    	//boucle ouverte
         		chSysUnlock();
         }
+
         //100Hz
         chThdSleepUntilWindowed(time, time + MS2ST(10));
     }
+}
+
+void starting_move(void){
+	//Get out of the beginning slot
+	left_motor_set_pos(0);
+	right_motor_set_pos(0);
+	right_motor_set_speed(-400);
+	left_motor_set_speed(-400);
+	while (left_motor_get_pos()>-1300){}
+	right_motor_set_speed(0);
+	left_motor_set_speed(0);
+
+	//Turn towards the line to follow
+	left_motor_set_pos(0);
+	right_motor_set_pos(0);
+	right_motor_set_speed(400);
+	left_motor_set_speed(-400);
+	while (left_motor_get_pos()>-350){}
+	right_motor_set_speed(0);
+	left_motor_set_speed(0);
 }
 
 void run_thd_start(void){

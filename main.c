@@ -5,17 +5,20 @@
 
 #include "ch.h"
 #include "hal.h"
+#include <pal.h>
 #include "memory_protection.h"
+
 #include <usbcfg.h>
-#include <main.h>
 #include <motors.h>
 #include <camera/po8030.h>
 #include <chprintf.h>
+#include <sensors/proximity.h>
+#include <leds.h>
+
 #include <detectionIR.h>
 #include <process_image.h>
 #include <run.h>
-#include <sensors/proximity.h>
-#include <leds.h>
+#include <main.h>
 
 
 messagebus_t bus;
@@ -23,6 +26,7 @@ MUTEX_DECL(bus_lock);
 CONDVAR_DECL(bus_condvar);
 
 parameter_namespace_t parameter_root, aseba_ns;
+
 
 void SendUint8ToComputer(uint8_t* data, uint16_t size) 
 {
@@ -45,10 +49,12 @@ static void serial_start(void)
 
 int main(void)
 {
-
     halInit();
     chSysInit();
     mpu_init();
+
+    messagebus_init(&bus, &bus_lock, &bus_condvar);
+    parameter_namespace_declare(&parameter_root, NULL, NULL);
 
     //starts the serial communication
     serial_start();
@@ -57,20 +63,20 @@ int main(void)
     //starts the camera
     dcmi_start();
 	po8030_start();
-	//start the IR sensor
-	messagebus_init(&bus, &bus_lock, &bus_condvar);
-	parameter_namespace_declare(&parameter_root, NULL, NULL);
-	calibrate_ir();
+	//start the IR sensors and thread
 	proximity_start();
-	//inits the motors
+	calibrate_ir();
+	//init the motors
 	motors_init();
 
+	//stars the thread used later for hand detection
+	start_thd_IR();
 
 	//stars the threads for the pi regulator and the processing of the image
-	//run_thd_start();
+	run_thd_start();
 	//process_image_start();
-	start_thd_IR();
-	set_front_led(1);
+
+	starting_move();
     /* Infinite loop. */
     while (1) {
     	//waits 1 second
