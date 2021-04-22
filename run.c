@@ -9,6 +9,7 @@
 #include <motors.h>
 #include <process_image.h>
 #include <run.h>
+#include <detectionIR.h>
 
 #define distanceObjectif 10
 #define SPEED_BASE 100 //la vitesse nominale des moteurs
@@ -23,6 +24,7 @@ static THD_FUNCTION(Run, arg) {
     int16_t speedR = 0;
     int16_t speedL = 0;
 
+    //PID :
     float erreur=0;
     float erreur_precedente=0;
     float erreurtot=0;
@@ -70,7 +72,6 @@ static THD_FUNCTION(Run, arg) {
         		erreurtot=0;
 
         		chSysUnlock();
-        		chBSemSignal(&robot_stopped_sem); //askip elle peut pas être appelée depuis une lock zone
         }
         else if(getEtat()=='B'){
         		chSysLock();

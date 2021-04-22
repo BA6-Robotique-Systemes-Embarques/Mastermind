@@ -8,7 +8,7 @@
 #ifndef DETECTIONIR_H_
 #define DETECTIONIR_H_
 
-void run_thd_IR(void);
+void start_thd_IR(void);
 
 
 

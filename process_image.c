@@ -14,21 +14,6 @@ static unsigned int  width;
 static int pos;
 static char etat = 'N'; //N = lighe noir, R = pastille rouge (arrêt), B = pastille bleue (Lire carte)
 
-/*
-void lissage_image(uint8_t* image){
-	uint8_t imagelisse[IMAGE_BUFFER_SIZE-8] = {0};
-	for(int i=4; i<IMAGE_BUFFER_SIZE-4; i++){
-		for(int j=i-4;j<i+4; j++){
-			imagelisse[i-4]+=image[j];
-		}
-		imagelisse[i-4]/=8;
-	}
-
-	for(int i=4;i<IMAGE_BUFFER_SIZE-4; i++){
-		image[i]=imagelisse[i];
-	}
-}
-*/
 //GETTERS :
 float getDistanceCM(void){
 	return distance_cm;
@@ -113,7 +98,7 @@ static THD_FUNCTION(ProcessImage, arg) {
 
 
     while(1){
-    	//waits until an image has been captured
+    		//waits until an image has been captured
         chBSemWait(&image_ready_sem);
 		//gets the pointer to the array filled with the last image in RGB565    
 		img_buff_ptr = dcmi_get_last_image_ptr();
@@ -127,6 +112,7 @@ static THD_FUNCTION(ProcessImage, arg) {
 
 
 		imagePython=&image[0];
+
 		if (envoi){
 			SendUint8ToComputer(imagePython, IMAGE_BUFFER_SIZE);
 		}

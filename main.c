@@ -11,9 +11,18 @@
 #include <motors.h>
 #include <camera/po8030.h>
 #include <chprintf.h>
-
+#include <detectionIR.h>
 #include <process_image.h>
 #include <run.h>
+#include <sensors/proximity.h>
+#include <leds.h>
+
+
+messagebus_t bus;
+MUTEX_DECL(bus_lock);
+CONDVAR_DECL(bus_condvar);
+
+parameter_namespace_t parameter_root, aseba_ns;
 
 void SendUint8ToComputer(uint8_t* data, uint16_t size) 
 {
@@ -48,12 +57,20 @@ int main(void)
     //starts the camera
     dcmi_start();
 	po8030_start();
+	//start the IR sensor
+	messagebus_init(&bus, &bus_lock, &bus_condvar);
+	parameter_namespace_declare(&parameter_root, NULL, NULL);
+	calibrate_ir();
+	proximity_start();
 	//inits the motors
 	motors_init();
 
+
 	//stars the threads for the pi regulator and the processing of the image
-	run_thd_start();
-	process_image_start();
+	//run_thd_start();
+	//process_image_start();
+	start_thd_IR();
+	set_front_led(1);
     /* Infinite loop. */
     while (1) {
     	//waits 1 second
