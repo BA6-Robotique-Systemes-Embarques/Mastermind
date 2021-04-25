@@ -74,9 +74,9 @@ int main(void)
 
 	//stars the threads for the pi regulator and the processing of the image
 	run_thd_start();
-	//process_image_start();
+	process_image_start();
 
-	starting_move();
+	//starting_move();
     /* Infinite loop. */
     while (1) {
     	//waits 1 second

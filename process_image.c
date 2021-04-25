@@ -7,21 +7,17 @@
 #include <camera/po8030.h>
 
 #include <process_image.h>
+#include <run.h>
 
 
 static float distance_cm = 0;
 static unsigned int  width;
 static int pos;
-static char etat = 'S'; //N = lighe noir, R = pastille rouge (arrêt),
-						//B = pastille bleue (Lire carte), S = start
+
 
 //GETTERS :
 float getDistanceCM(void){
 	return distance_cm;
-}
-
-char getEtat(void){
-	return etat;
 }
 
 int getPos(void){
@@ -51,9 +47,12 @@ void pos_width(uint8_t* image, float mean){
 	}
 
 	width = right-left;
-	pos=(right+left)/2-IMAGE_BUFFER_SIZE/2; // axe des x centré au milieu de l'image (pixel N° 320)
+	//pour éviter les bugs :
+	if(abs(pos-((right+left)/2-IMAGE_BUFFER_SIZE/2))<200){
+		pos=(right+left)/2-IMAGE_BUFFER_SIZE/2; // axe des x centré au milieu de l'image (pixel N° 320)
+	}
 	convert((float)width);
-	//chprintf((BaseSequentialStream *)&SDU1, "%Width=%-7d %Distance=%-7d\r\n", width, distance_cm);
+	//chprintf((BaseSequentialStream *)&SDU1, "% Position= %-7d\r\n", pos);
 }
 
 //semaphore
@@ -65,13 +64,13 @@ static THD_FUNCTION(CaptureImage, arg) {
     chRegSetThreadName(__FUNCTION__);
     (void)arg;
 
-	//Takes pixels 0 to IMAGE_BUFFER_SIZE of the line 10 + 11 (minimum 2 lines because reasons)
-	po8030_advanced_config(FORMAT_RGB565, 0, 10, IMAGE_BUFFER_SIZE, 2, SUBSAMPLING_X1, SUBSAMPLING_X1);
+	//Takes pixels 0 to IMAGE_BUFFER_SIZE of the line 470 + 471 (minimum 2 lines because reasons)
+	po8030_advanced_config(FORMAT_RGB565, 0, 470, IMAGE_BUFFER_SIZE, 2, SUBSAMPLING_X1, SUBSAMPLING_X1);
 	dcmi_enable_double_buffering();
 	dcmi_set_capture_mode(CAPTURE_ONE_SHOT);
 	dcmi_prepare();
-	int time_start;
-	int total_time;
+	//int time_start;
+	//int total_time;
     while(1){
     		//time_start = chVTGetSystemTime();
         //starts a capture
@@ -86,16 +85,18 @@ static THD_FUNCTION(CaptureImage, arg) {
 }
 
 
-static THD_WORKING_AREA(waProcessImage, 1024);
+static THD_WORKING_AREA(waProcessImage, 4*1024);
 static THD_FUNCTION(ProcessImage, arg) {
 
     chRegSetThreadName(__FUNCTION__);
     (void)arg;
 
 	uint8_t *img_buff_ptr;
-	uint8_t image[IMAGE_BUFFER_SIZE] = {0};
+	uint8_t imageR[IMAGE_BUFFER_SIZE] = {0};
+	uint8_t imageG[IMAGE_BUFFER_SIZE] = {0};
+	uint8_t imageB[IMAGE_BUFFER_SIZE] = {0};
 	bool envoi =0;
-	uint8_t *imagePython;
+	//uint8_t *imagePython;
 
 
     while(1){
@@ -103,19 +104,51 @@ static THD_FUNCTION(ProcessImage, arg) {
         chBSemWait(&image_ready_sem);
 		//gets the pointer to the array filled with the last image in RGB565    
 		img_buff_ptr = dcmi_get_last_image_ptr();
-		float mean=0;
-		for(unsigned int i=0; i<IMAGE_BUFFER_SIZE; i++){
-			image[i] = ((*(img_buff_ptr+2*i) & 0b00000111)<<3) | ((*(img_buff_ptr+2*i+1)) >>5);
-			mean+=image[i];
+		float meanR=0;
+		float meanG=0;
+		float meanB=0;
+
+		//Extracts only the red pixels
+		for(uint16_t i=0; i<IMAGE_BUFFER_SIZE; i++){
+			//extracts first 5bits of the first byte
+			//takes nothing from the second byte
+			imageR[i] =((uint8_t)(img_buff_ptr[2*i]) & 0xF8)>>3;
+			//chprintf((BaseSequentialStream *)&SDU1, "% imageRed  %-7d\r\n", imageR[i]);
+			meanR+=imageR[i/2];
 		}
-		mean/=IMAGE_BUFFER_SIZE;
-		pos_width(image, mean);
 
+		//Extracts only the green pixels
+		for(uint16_t i=0; i<IMAGE_BUFFER_SIZE; i++){
+			imageG[i] = ((*(img_buff_ptr+2*i) & 0b00000111)<<3) | ((*(img_buff_ptr+2*i+1)) >>5);
+			meanG+=imageG[i];
+		}
 
-		imagePython=&image[0];
+		//Extracts only the blue pixels
+		for(uint16_t i=0; i<(2*IMAGE_BUFFER_SIZE); i+=2){
+			//extracts las 5bits of the second byte
+			//takes nothing from the first byte
+			imageB[i/2] = (uint8_t)img_buff_ptr[i+1]&0x1F;
+			meanB+=imageB[i/2];
+		}
+
+		meanR/=IMAGE_BUFFER_SIZE;
+		meanG/=IMAGE_BUFFER_SIZE;
+		meanB/=IMAGE_BUFFER_SIZE;
+
+		pos_width(imageG, meanG);
+
+		if(imageR[pos+IMAGE_BUFFER_SIZE/2]>meanR){
+			setEtat('R');//si au milieu de la ligne on a un du rouge
+		}
+		else if(imageB[pos+IMAGE_BUFFER_SIZE/2]>meanB/2){
+			setEtat('B');//si au milieu de la ligne on a un du bleu
+		}
+		else{
+			setEtat('N');
+		}
 
 		if (envoi){
-			SendUint8ToComputer(imagePython, IMAGE_BUFFER_SIZE);
+			SendUint8ToComputer(imageR, IMAGE_BUFFER_SIZE);
 		}
 		envoi = !envoi;
     }

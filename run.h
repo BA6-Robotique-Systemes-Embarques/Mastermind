@@ -5,4 +5,8 @@
 void run_thd_start(void);
 void starting_move(void);
 
+//Getters et setters :
+char getEtat(void);
+void setEtat(char c);
+
 #endif /* PI_REGULATOR_H */
