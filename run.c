@@ -14,8 +14,8 @@
 #define distanceObjectif 10
 #define SPEED_BASE 200 //la vitesse nominale des moteurs
 
-static char etat = 'N'; //N = lighe noir, R = pastille rouge (arrêt),
-						//B = pastille bleue (Lire carte), P = pause (open-loop)
+static char etat = 'N'; //N = lighe noir, R = pastille rouge (lire carte),
+						//B = pastille bleue (arrêt après 3 lectures), P = pause (open-loop)
 
 static THD_WORKING_AREA(waRun, 256);
 static THD_FUNCTION(Run, arg) {
@@ -38,6 +38,7 @@ static THD_FUNCTION(Run, arg) {
 
     while(1){
         time = chVTGetSystemTime();
+        chprintf((BaseSequentialStream *)&SDU1, "% etat  %-7c\r\n", etat);
         if(etat=='N'){
         		//alors suit la ligne noir
         		erreur=getPos(); //Erreur entre -320 et 320
@@ -61,20 +62,17 @@ static THD_FUNCTION(Run, arg) {
         		erreur_precedente=erreur;
         }
         else if(etat=='R'){
-        		chSysLock();//boucle ouverte
-
-
+        		right_motor_set_speed(0);
+        	    left_motor_set_speed(0);
         		erreur_precedente=0;
         		erreurtot=0;
-
-        		chSysUnlock();
         }
         else if(etat=='B'){
-        		chSysLock();
+        		right_motor_set_speed(0);
+        	    left_motor_set_speed(0);
         		erreur_precedente=0;
         		erreurtot=0;
         	    	//boucle ouverte
-        		chSysUnlock();
         }
 
         //100Hz

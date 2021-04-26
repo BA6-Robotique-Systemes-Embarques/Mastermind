@@ -69,14 +69,12 @@ int main(void)
 	//init the motors
 	motors_init();
 
+	starting_move();
 	//stars the thread used later for hand detection
-	start_thd_IR();
-
-	//stars the threads for the pi regulator and the processing of the image
+	IR_thd_start();
+	//stars the threads for the moving of the robot and the processing of the image
 	run_thd_start();
 	process_image_start();
-
-	//starting_move();
     /* Infinite loop. */
     while (1) {
     	//waits 1 second
