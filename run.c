@@ -32,13 +32,13 @@ static THD_FUNCTION(Run, arg) {
     float erreur_precedente=0;
     float erreurtot=0;
 
-    int Kp=1;
+    int Kp=2;
     int Ki=0.02;
     int Kd=0.5;
 
     while(1){
         time = chVTGetSystemTime();
-        chprintf((BaseSequentialStream *)&SDU1, "% etat  %-7c\r\n", etat);
+        //chprintf((BaseSequentialStream *)&SDU1, "% etat  %-7c\r\n", etat);
         if(etat=='N'){
         		//alors suit la ligne noir
         		erreur=getPos(); //Erreur entre -320 et 320
@@ -62,16 +62,20 @@ static THD_FUNCTION(Run, arg) {
         		erreur_precedente=erreur;
         }
         else if(etat=='R'){
+        		etat='N';
+        		/*
         		right_motor_set_speed(0);
         	    left_motor_set_speed(0);
         		erreur_precedente=0;
-        		erreurtot=0;
+        		erreurtot=0;*/
         }
         else if(etat=='B'){
+        		etat='N';
+        		/*
         		right_motor_set_speed(0);
         	    left_motor_set_speed(0);
         		erreur_precedente=0;
-        		erreurtot=0;
+        		erreurtot=0;*/
         	    	//boucle ouverte
         }
 
@@ -86,7 +90,9 @@ void starting_move(void){
 	right_motor_set_pos(0);
 	right_motor_set_speed(-400);
 	left_motor_set_speed(-400);
-	while (left_motor_get_pos()>-1300){}
+	while (left_motor_get_pos()>-1100)
+	{
+	}
 	right_motor_set_speed(0);
 	left_motor_set_speed(0);
 
@@ -95,7 +101,9 @@ void starting_move(void){
 	right_motor_set_pos(0);
 	right_motor_set_speed(400);
 	left_motor_set_speed(-400);
-	while (left_motor_get_pos()>-350){}
+	while (left_motor_get_pos()>-350)
+	{
+	}
 	right_motor_set_speed(0);
 	left_motor_set_speed(0);
 }

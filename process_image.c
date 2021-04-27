@@ -11,7 +11,6 @@
 
 
 static float distance_cm = 0;
-static unsigned int  width;
 static int pos;
 
 
@@ -45,13 +44,12 @@ void pos_width(uint8_t* image, float mean){
 		}
 	}
 
-	width = right-left;
 	//pour éviter les bugs :
 	if(abs(pos-((right+left)/2-IMAGE_BUFFER_SIZE/2))<200  || pos==-IMAGE_BUFFER_SIZE/2){
 		pos=(right+left)/2-IMAGE_BUFFER_SIZE/2; // axe des x centré au milieu de l'image (pixel N° 320)
 	}
 	//convert((float)width);
-	//chprintf((BaseSequentialStream *)&SDU1, "% Left= %-7d\r\n", left);
+	//chprintf((BaseSequentialStream *)&SDU1, "% Left= %-7d % Right= %-7d\r\n", left, right);
 }
 
 //semaphore
@@ -132,14 +130,14 @@ static THD_FUNCTION(ProcessImage, arg) {
 			meanR/=IMAGE_BUFFER_SIZE;
 			meanG/=IMAGE_BUFFER_SIZE;
 			meanB/=IMAGE_BUFFER_SIZE;
-			//chprintf((BaseSequentialStream *)&SDU1, "% MeanBlue= %-7d\r\n", (int)meanB);
+			//chprintf((BaseSequentialStream *)&SDU1, "% MeanBlue= %-7d\r\n", (int)meanG);
 
 			pos_width(imageG, meanG);
 
-			if((imageB[pos+IMAGE_BUFFER_SIZE/2]<meanB/2) && (imageR[pos+IMAGE_BUFFER_SIZE/2]>meanR)){
+			if((imageB[pos+IMAGE_BUFFER_SIZE/2]<meanB) && (imageR[pos+IMAGE_BUFFER_SIZE/2]>meanR)){
 				setEtat('R');//si au milieu de la ligne on a un du rouge
 			}
-			else if((imageB[pos+IMAGE_BUFFER_SIZE/2]>meanB/2) && (imageR[pos+IMAGE_BUFFER_SIZE/2]<meanR)){
+			else if((imageB[pos+IMAGE_BUFFER_SIZE/2]>meanB) && (imageR[pos+IMAGE_BUFFER_SIZE/2]<meanR)){
 				setEtat('B');//si au milieu de la ligne on a un du bleu
 			}
 		}
