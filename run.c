@@ -146,10 +146,10 @@ char getEtat(void){
 
 void setEtat(char c){
 	switch(c){
-	case 'P' : etat = 'P';break;
-	case 'N' : etat = 'N';break;
-	case 'R' : etat = 'R';break;
-	case 'G' : etat = 'G';break;
-	case 'B' : etat = 'B';break;
+		case 'P' : etat = 'P';break;
+		case 'N' : etat = 'N';break;
+		case 'R' : etat = 'R';break;
+		case 'G' : etat = 'G';break;
+		case 'B' : etat = 'B';break;
 	}
 }

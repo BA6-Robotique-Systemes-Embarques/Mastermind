@@ -44,9 +44,7 @@ static THD_FUNCTION(Affichage, arg){
     while(1){
     		time = chVTGetSystemTime();
 
-    		hintpins.b_key=0;
-    		hintpins.w_key=2;
-    		hintpins.victory_state=1;
+    		hintpins=getHints();
 
     		if(getEtat()=='P' && hintpins.b_key+hintpins.w_key<=3){
     			unsigned int compteur_led=0;
@@ -54,6 +52,11 @@ static THD_FUNCTION(Affichage, arg){
     				LEDs_update(seq_victory[sequence_pos]);
     				sequence_pos++;
     				sequence_pos %=6;
+    			}
+    			else if(hintpins.victory_state==2){
+    				set_led(LED5,0);
+    				set_led(LED7,0);
+    				set_led(LED1,0);
     			}
     			else{
     				switch(hintpins.b_key){
