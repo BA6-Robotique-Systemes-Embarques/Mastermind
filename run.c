@@ -11,11 +11,61 @@
 #include <run.h>
 #include <detectionIR.h>
 
-#define distanceObjectif 10
 #define SPEED_BASE 200 //la vitesse nominale des moteurs
+#define POSITION_MOTEUR_CHAMP_VISION 1100 //la distance à laquelle la caméra voit convertie en position de moteur
+#define POSITION_MOTEUR_ROTATION180 700
 
 static char etat = 'N'; //N = lighe noir, R = pastille rouge (lire carte),
 						//B = pastille bleue (arrêt après 3 lectures), P = pause (open-loop)
+
+
+void starting_move(void){
+	//Get out of the beginning slot
+	left_motor_set_pos(0);
+	right_motor_set_pos(0);
+	right_motor_set_speed(-400);
+	left_motor_set_speed(-400);
+	while(left_motor_get_pos()>-1100)
+	{
+	}
+	right_motor_set_speed(0);
+	left_motor_set_speed(0);
+
+	//Turn towards the line to follow
+	left_motor_set_pos(0);
+	right_motor_set_pos(0);
+	right_motor_set_speed(400);
+	left_motor_set_speed(-400);
+	while(left_motor_get_pos()>-POSITION_MOTEUR_ROTATION180/2){
+		__asm__ volatile ("nop");
+	}
+	right_motor_set_speed(0);
+	left_motor_set_speed(0);
+}
+
+void break_move(void){//appellée lorsque le robot voit une ligne rouge
+	left_motor_set_pos(0);
+	right_motor_set_pos(0);
+	right_motor_set_speed(400);
+	left_motor_set_speed(400);
+	while(left_motor_get_pos()<POSITION_MOTEUR_CHAMP_VISION)//correspondant à ~8 cm
+	{
+		__asm__ volatile ("nop");
+	}
+	right_motor_set_speed(0);
+	left_motor_set_speed(0);
+
+	//Turn 180°
+	left_motor_set_pos(0);
+	right_motor_set_pos(0);
+	right_motor_set_speed(400);
+	left_motor_set_speed(-400);
+	while (right_motor_get_pos()<POSITION_MOTEUR_ROTATION180){
+		__asm__ volatile ("nop");
+	}
+	right_motor_set_speed(0);
+	left_motor_set_speed(0);
+}
 
 static THD_WORKING_AREA(waRun, 256);
 static THD_FUNCTION(Run, arg) {
@@ -62,12 +112,12 @@ static THD_FUNCTION(Run, arg) {
         		erreur_precedente=erreur;
         }
         else if(etat=='R'){
-        		etat='N';
-        		/*
+    			erreur_precedente=0;
+        		erreurtot=0;
         		right_motor_set_speed(0);
         	    left_motor_set_speed(0);
-        		erreur_precedente=0;
-        		erreurtot=0;*/
+        	    break_move();
+        	    etat='P';
         }
         else if(etat=='B'){
         		etat='N';
@@ -82,30 +132,6 @@ static THD_FUNCTION(Run, arg) {
         //100Hz
         chThdSleepUntilWindowed(time, time + MS2ST(10));
     }
-}
-
-void starting_move(void){
-	//Get out of the beginning slot
-	left_motor_set_pos(0);
-	right_motor_set_pos(0);
-	right_motor_set_speed(-400);
-	left_motor_set_speed(-400);
-	while (left_motor_get_pos()>-1100)
-	{
-	}
-	right_motor_set_speed(0);
-	left_motor_set_speed(0);
-
-	//Turn towards the line to follow
-	left_motor_set_pos(0);
-	right_motor_set_pos(0);
-	right_motor_set_speed(400);
-	left_motor_set_speed(-400);
-	while (left_motor_get_pos()>-350)
-	{
-	}
-	right_motor_set_speed(0);
-	left_motor_set_speed(0);
 }
 
 void run_thd_start(void){

@@ -7,7 +7,6 @@
 #include "hal.h"
 #include <pal.h>
 #include "memory_protection.h"
-
 #include <usbcfg.h>
 #include <motors.h>
 #include <camera/po8030.h>
@@ -19,6 +18,7 @@
 #include <process_image.h>
 #include <run.h>
 #include <main.h>
+#include <affichage.h>
 
 
 messagebus_t bus;
@@ -75,6 +75,8 @@ int main(void)
 	//stars the threads for the moving of the robot and the processing of the image
 	run_thd_start();
 	process_image_start();
+	affichage_start();
+
     /* Infinite loop. */
     while (1) {
     	//waits 1 second

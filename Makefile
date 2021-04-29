@@ -13,6 +13,8 @@ CSRC += ./main.c \
 		./run.c \
 		./process_image.c \
 		./detectionIR.c \
+		./game_logic.c \
+		./affichage.c \
 
 #Header folders to include
 INCDIR += 

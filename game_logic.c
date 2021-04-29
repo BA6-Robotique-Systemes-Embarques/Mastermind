@@ -5,7 +5,7 @@
 #include <main.h>
 #include <game_logic.h>
 
-#define MAX_NUM_TURN	8
+#define MAX_NUM_TURN	 8
 
 #define GAME_CONTINUES	0
 #define GAME_WON		1

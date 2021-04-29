@@ -142,11 +142,11 @@ static THD_FUNCTION(ProcessImage, arg) {
 			}
 		}
 
-
-		if (envoi){
+		//affichage ordinateur :
+		/*if (envoi){
 			SendUint8ToComputer(imageB, IMAGE_BUFFER_SIZE);
 		}
-		envoi = !envoi;
+		envoi = !envoi;*/
     }
 }
 
