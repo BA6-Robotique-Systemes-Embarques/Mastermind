@@ -9,4 +9,9 @@ void starting_move(void);
 char getEtat(void);
 void setEtat(char c);
 
+bool get_objectInFront(void);
+void set_objectInFront(bool object);
+
+void set_currentCard(uint8_t leftColor, uint8_t rightColor);
+
 #endif /* PI_REGULATOR_H */

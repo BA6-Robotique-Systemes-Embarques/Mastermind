@@ -8,13 +8,13 @@
 
 #include <process_image.h>
 #include <run.h>
-
+#include <leds.h>
 
 static float distance_cm = 0;
 static int pos;
 
 
-//GETTERS :
+//---------------GETTERS---------------
 float getDistanceCM(void){
 	return distance_cm;
 }
@@ -23,6 +23,8 @@ int getPos(void){
 	return pos;
 }
 
+
+//---------------Image Calculations---------------
 void convert(float width){
 	distance_cm=2*738.1/width;
 }
@@ -52,7 +54,38 @@ void pos_width(uint8_t* image, float mean){
 	//chprintf((BaseSequentialStream *)&SDU1, "% Left= %-7d % Right= %-7d\r\n", left, right);
 }
 
-//semaphore
+uint8_t colorOfPixel(uint8_t* Pixel){
+	bool redB=0, greenB=0, blueB=0;
+
+	uint8_t mean=(Pixel[RED]+Pixel[GREEN]+Pixel[BLUE])/3;
+
+	if (Pixel[RED]>mean){redB=true;}
+	if (Pixel[GREEN]>mean){greenB=true;}
+	if (Pixel[BLUE]>mean){blueB=true;}
+
+	/*	if (Pixel[RED]>meanR){redB=true;}
+	if (Pixel[GREEN]>meanG){greenB=true;}
+	if (Pixel[BLUE]>meanB){blueB=true;}*/
+
+	if (redB && greenB){
+		if (Pixel[RED]>Pixel[GREEN]) {return RED;}
+		else{return GREEN;}}
+
+	if (redB && blueB){
+		if (Pixel[RED]>Pixel[BLUE]) {return RED;}
+		else{return BLUE;}}
+
+	if (blueB && greenB){
+		if (Pixel[BLUE]>Pixel[GREEN]) {return BLUE;}
+		else{return GREEN;}}
+
+	if (redB) {return RED;}
+	else if (greenB) {return GREEN;}
+	else if (blueB) {return BLUE;}
+	else {return RED;}				//ARBITRARY COLOR, THIS RETURN IS IF NO COLOR WAS DETECTED
+}
+
+//---------------Semaphore---------------
 static BSEMAPHORE_DECL(image_ready_sem, TRUE);
 
 static THD_WORKING_AREA(waCaptureImage, 256);
@@ -99,7 +132,8 @@ static THD_FUNCTION(ProcessImage, arg) {
 		//gets the pointer to the array filled with the last image in RGB565    
 		img_buff_ptr = dcmi_get_last_image_ptr();
 
-		if(getEtat()=='N'){
+		if(getEtat()=='N')
+		{
 			float meanR=0;
 			float meanG=0;
 			float meanB=0;
@@ -141,7 +175,42 @@ static THD_FUNCTION(ProcessImage, arg) {
 				setEtat('B');//si au milieu de la ligne on a un du bleu
 			}
 		}
+		else if(getEtat()=='R' && get_objectInFront())  //Extract the colors of 2 pixels in order to find the colors of the card
+		{
+			uint8_t leftPixel[RGB] = {0};
+			uint8_t rightPixel[RGB] = {0};
 
+			/*float meanR=0;
+			float meanG=0;
+			float meanB=0;
+
+			for(uint16_t i=0; i<IMAGE_BUFFER_SIZE/4; i+=4){		//RED mean
+				meanR+=(((uint8_t)(img_buff_ptr[2*i]) & 0xF8)>>3)/2;}
+
+			for(uint16_t i=0; i<IMAGE_BUFFER_SIZE/4; i+=4){		//GREEN mean
+				meanG+= ((*(img_buff_ptr+2*i) & 0b00000111)<<3) | ((*(img_buff_ptr+2*i+1)) >>5);}
+
+			for(uint16_t i=0; i<(2*IMAGE_BUFFER_SIZE/4); i+=8){	//BLUE mean
+				meanB+=((uint8_t)img_buff_ptr[i+1] & 0x1F)/2;}
+
+			meanR/=IMAGE_BUFFER_SIZE/4;
+			meanG/=IMAGE_BUFFER_SIZE/4;
+			meanB/=IMAGE_BUFFER_SIZE/4;*/
+
+			int i = 2*IMAGE_BUFFER_SIZE/6; // left position
+			leftPixel[RED]=((uint8_t)(img_buff_ptr[2*i]) & 0xF8)>>3;
+			leftPixel[GREEN] = (((*(img_buff_ptr+2*i) & 0b00000111)<<3) | ((*(img_buff_ptr+2*i+1)) >>5))/2;
+			leftPixel[BLUE] = (uint8_t)img_buff_ptr[(2*i)+1]&0x1F;
+
+			i = 5*IMAGE_BUFFER_SIZE/6; // right position
+			rightPixel[RED]=((uint8_t)(img_buff_ptr[2*i]) & 0xF8)>>3;
+			rightPixel[GREEN] = (((*(img_buff_ptr+2*i) & 0b00000111)<<3) | ((*(img_buff_ptr+2*i+1)) >>5))/2;
+			rightPixel[BLUE] = (uint8_t)img_buff_ptr[(2*i)+1]&0x1F;
+
+			//chprintf((BaseSequentialStream *)&SDU1, "% etat %-7d %-7d\r\n", colorOfPixel(leftPixel),colorOfPixel(rightPixel));
+			//send the color information to run module
+			set_currentCard(colorOfPixel(leftPixel), colorOfPixel(rightPixel));
+		}
 		//affichage ordinateur :
 		/*if (envoi){
 			SendUint8ToComputer(imageB, IMAGE_BUFFER_SIZE);

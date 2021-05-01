@@ -26,6 +26,10 @@ typedef struct {
 void setAttempt(uint8_t pin1, uint8_t pin2, uint8_t pin3); //sets the guess attempt
 void setGamecode(gameCode code); //Sets the code that has to be guessed
 hintPins getHints(void);
+
 void resetTurnCounter(void); //self-explanatory
+unsigned int getTurnCounter(void);
+
+void setAttemptPin(uint8_t currentPin);//dynamically adds the color of the pin seen by the camera to the attempt
 
 #endif
