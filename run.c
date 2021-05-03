@@ -194,18 +194,29 @@ void set_objectInFront(bool object){
 }
 
 void set_currentCard(uint8_t leftColor, uint8_t rightColor){
-	if (leftColor==RED || rightColor==RED) {currentCard=COLOR_RED_RED;
-	set_rgb_led(LED2, 254, 0, 0);}
-	else if (leftColor==BLUE || rightColor==BLUE) {currentCard=COLOR_BLUE_BLUE;
-	set_rgb_led(LED2, 0, 0, 254);}
-	else if (leftColor==GREEN || rightColor==GREEN) {currentCard=COLOR_GREEN_GREEN;
-	set_rgb_led(LED2, 0, 254, 0);}
-	else if (leftColor==RED || rightColor==GREEN) {currentCard=COLOR_RED_GREEN;
-	set_rgb_led(LED2, 254, 254, 0);}
-	else if (leftColor==RED || rightColor==BLUE) {currentCard=COLOR_RED_BLUE;
-	set_rgb_led(LED2, 255, 0, 254);}
-	else {//chprintf((BaseSequentialStream *)&SDU1, "Wrong color of card");
-	set_led(LED7, 1);}
+	if (leftColor==RED || rightColor==RED){
+		currentCard=COLOR_RED_RED;
+		set_rgb_led(LED2, 100, 0, 0);
+	}
+	else if (leftColor==BLUE || rightColor==BLUE){
+		currentCard=COLOR_BLUE_BLUE;
+		set_rgb_led(LED2, 0, 0, 100);
+	}
+	else if (leftColor==GREEN || rightColor==GREEN){
+		currentCard=COLOR_GREEN_GREEN;
+		set_rgb_led(LED2, 0, 100, 0);
+	}
+	else if (leftColor==RED || rightColor==GREEN){
+		currentCard=COLOR_RED_GREEN;
+		set_rgb_led(LED2, 100, 100, 0);
+	}
+	else if (leftColor==RED || rightColor==BLUE){
+		currentCard=COLOR_RED_BLUE;
+		set_rgb_led(LED2, 100, 0, 100);
+	}
+	else{//chprintf((BaseSequentialStream *)&SDU1, "Wrong color of card");
+		set_body_led(LED7, 1);
+	}
 
 	cardScanned=1;
 }
