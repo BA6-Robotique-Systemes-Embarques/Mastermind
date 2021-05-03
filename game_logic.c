@@ -90,6 +90,7 @@ void setAttemptPin(uint8_t currentPin){
 			attempt.pin1 =0;
 			attempt.pin2 =0;
 			attempt.pin3 =0;
+			turnCounter++;
 			break;
 		}
 	}

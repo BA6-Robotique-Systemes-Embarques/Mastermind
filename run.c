@@ -13,13 +13,13 @@
 #include <game_logic.h>
 #include <leds.h>
 
-#define SPEED_BASE 200 //la vitesse nominale des moteurs pour le suivi de ligne
-#define POSITION_MOTEUR_CHAMP_VISION 1100 //la distance à laquelle la caméra voit convertie en position de moteur
-#define POSITION_MOTEUR_ROTATION180 700
+#define SPEED_BASE 250 //la vitesse nominale des moteurs pour le suivi de ligne
+#define POSITION_MOTEUR_CHAMP_VISION 900 //la distance à laquelle la caméra voit convertie en position de moteur
+#define POSITION_MOTEUR_ROTATION180 680
 #define LEFT 0
 #define RIGHT 1
 
-static char etat = ETAT_SCAN; //N = lighe noir, R = pastille rouge (lire carte),
+static char etat = ETAT_FOLLOW; //N = lighe noir, R = pastille rouge (lire carte),
 						//B = pastille bleue (arrêt après 3 lectures), P = pause (open-loop)
 
 static bool objectInFront = 0; //Updayed by rom detectionIR.c to confirm that an card is in front of the e-puck2
@@ -66,26 +66,27 @@ void starting_move(void){
 	move_dist(-1100);
 
 	//Turn towards the line to follow
-	turn_dist(POSITION_MOTEUR_ROTATION180/2);
+	turn_dist(-POSITION_MOTEUR_ROTATION180/2);
+	move_dist(-300);
 }
 
 void scan_move(bool orientation){
 	//open loop forward and turn
 	move_dist(POSITION_MOTEUR_CHAMP_VISION);
-	if (orientation==LEFT){turn_dist(-1*POSITION_MOTEUR_ROTATION180/2);}
-	else if (orientation==RIGHT){turn_dist(POSITION_MOTEUR_ROTATION180/2);}
+	if (orientation==RIGHT) turn_dist(-1*POSITION_MOTEUR_ROTATION180/2);
+	else if (orientation==LEFT) turn_dist(POSITION_MOTEUR_ROTATION180/2);
 
 	while(!cardScanned) //waits for processing of card colors
 	{
-		chThdSleepMilliseconds(100);
+		chThdSleepMilliseconds(10);
 	}
-	setAttemptPin(currentCard);
+	objectInFront = 0;
 	cardScanned=0;
+	setAttemptPin(currentCard);
 
 	//open loop turn
-	if (orientation==LEFT){turn_dist(POSITION_MOTEUR_ROTATION180/2);}
-	else if (orientation==RIGHT){turn_dist(-1*POSITION_MOTEUR_ROTATION180/2);}
-	objectInFront = 0;
+	if (orientation==RIGHT) turn_dist(POSITION_MOTEUR_ROTATION180/2);
+	else if (orientation==LEFT) turn_dist(-1*POSITION_MOTEUR_ROTATION180/2);
 }
 
 
@@ -109,13 +110,13 @@ static THD_FUNCTION(Run, arg) {
     float erreur_precedente=0;
     float erreurtot=0;
 
-    int Kp=2;
-    int Ki=0.02;
-    int Kd=0.5;
+    float Kp=0.5;
+    float Ki=0.1;
+    float Kd=0.5;
 
     while(1){
         time = chVTGetSystemTime();
-        //chprintf((BaseSequentialStream *)&SDU1, "% etat  %-7c\r\n", etat);
+        chprintf((BaseSequentialStream *)&SDU1, "% etat  %-7c\r\n", etat);
         if(etat==ETAT_FOLLOW){
         		//alors suit la ligne noir
         		erreur=getPos(); //Erreur entre -320 et 320
@@ -128,8 +129,8 @@ static THD_FUNCTION(Run, arg) {
     	        		erreurtot=-700.;
     	         }
 
-    	        speedR = SPEED_BASE-(Kp*erreur+Ki*erreurtot+Kd*(erreur-erreur_precedente));
-    	        speedL = SPEED_BASE+(Kp*erreur+Ki*erreurtot+Kd*(erreur-erreur_precedente));
+    	        speedR = (int)(SPEED_BASE-(Kp*erreur+Ki*erreurtot+Kd*(erreur-erreur_precedente)));
+    	        speedL = (int)(SPEED_BASE+(Kp*erreur+Ki*erreurtot+Kd*(erreur-erreur_precedente)));
 
     	        //chprintf((BaseSequentialStream *)&SDU1, "% speedRight  %-7d\r\n", speedR);
     	        //chprintf((BaseSequentialStream *)&SDU1, "% speedLeft  %-7d\r\n", speedL);
@@ -138,40 +139,18 @@ static THD_FUNCTION(Run, arg) {
 
         		erreur_precedente=erreur;
         }
-<<<<<<< HEAD
-        else if(etat==ETAT_SCAN)
-        {
-        	if(getTurnCounter()==0 || getTurnCounter()==1) //cards are to the left during first 6 scans
-        		scan_move(LEFT);
+        else if(etat==ETAT_SCAN){
+        		if(getTurnCounter()==0 || getTurnCounter()==1) //cards are to the left during first 6 scans
+        			scan_move(LEFT);
 			else if (getTurnCounter()>1) ////cards are to the right when the robot scans from the Paused placement
 				scan_move(RIGHT);
 
-    		erreur_precedente=0;
-        	erreurtot=0;
-
-=======
-        else if(etat=='R'){
-        		if(getTurnCounter()==0 || getTurnCounter()==1) //cards are to the left during first 6 scans
-        			scan_move(LEFT);
-        		else if (getTurnCounter()>1) ////cards are to the right when the robot scans from the Paused placement
-        			scan_move(RIGHT);
->>>>>>> 9a979681f4f69c3ddf644be0ee8325a773fedc80
-
-        		//reset PID :
         		erreur_precedente=0;
         		erreurtot=0;
+        		etat=ETAT_FOLLOW;
         }
-<<<<<<< HEAD
-        else if(etat==ETAT_GAMEHINT)
-        {
-        	right_motor_set_speed(0);
-        	left_motor_set_speed(0);
-        	break_move();
-        	etat=ETAT_PAUSE;
-        		/*
-=======
-        else if(etat=='B'){
->>>>>>> 9a979681f4f69c3ddf644be0ee8325a773fedc80
+
+        else if(etat==ETAT_GAMEHINT){
         		right_motor_set_speed(0);
         		left_motor_set_speed(0);
         		break_move();
@@ -180,10 +159,9 @@ static THD_FUNCTION(Run, arg) {
         		erreur_precedente=0;
         		erreurtot=0;
 
-        		etat='P';
+        		etat=ETAT_PAUSE;
         }
-
-        //100Hz
+        //100 Hz :
         chThdSleepUntilWindowed(time, time + MS2ST(10));
     }
 }
@@ -200,11 +178,10 @@ char getEtat(void){
 
 void setEtat(char c){
 	switch(c){
-		case ETAT_PAUSE : etat = ETAT_PAUSE;break;
-		case ETAT_FOLLOW : etat = ETAT_FOLLOW;break;
-		case ETAT_SCAN : etat = ETAT_SCAN;break;
-		case ETAT_GAMEHINT : etat = ETAT_GAMEHINT;break;
-		//case 'G' : etat = 'G';break;
+		case ETAT_PAUSE : etat = ETAT_PAUSE; break;
+		case ETAT_FOLLOW : etat = ETAT_FOLLOW; break;
+		case ETAT_SCAN : etat = ETAT_SCAN; break;
+		case ETAT_GAMEHINT : etat = ETAT_GAMEHINT; break;
 	}
 }
 
@@ -217,28 +194,35 @@ void set_objectInFront(bool object){
 }
 
 void set_currentCard(uint8_t leftColor, uint8_t rightColor){
-	if (leftColor==RED || rightColor==RED){
+	//chprintf((BaseSequentialStream *)&SDU1, "% leftColor= %-7d % right Color = %-7d\r\n", leftColor, rightColor);
+	if(leftColor==RED && rightColor==RED){
 		currentCard=COLOR_RED_RED;
-		set_rgb_led(LED2, 100, 0, 0);
+		chprintf((BaseSequentialStream *)&SDU1, "RedRed");
+		//set_rgb_led(LED2, 255, 0, 0);
 	}
-	else if (leftColor==BLUE || rightColor==BLUE){
+	else if(leftColor==BLUE &&rightColor==BLUE){
 		currentCard=COLOR_BLUE_BLUE;
-		set_rgb_led(LED2, 0, 0, 100);
+		chprintf((BaseSequentialStream *)&SDU1, "BlueBlue");
+		//set_rgb_led(LED2, 0, 0, 255);
 	}
-	else if (leftColor==GREEN || rightColor==GREEN){
+	else if (leftColor==GREEN && rightColor==GREEN){
 		currentCard=COLOR_GREEN_GREEN;
-		set_rgb_led(LED2, 0, 100, 0);
+		chprintf((BaseSequentialStream *)&SDU1, "GreenGreen");
+		//set_rgb_led(LED2, 0, 255, 0);
 	}
-	else if (leftColor==RED || rightColor==GREEN){
+	else if (leftColor==RED && rightColor==GREEN){
 		currentCard=COLOR_RED_GREEN;
-		set_rgb_led(LED2, 100, 100, 0);
+		chprintf((BaseSequentialStream *)&SDU1, "RedGreen");
+		//set_rgb_led(LED2, 255, 255, 0);
 	}
-	else if (leftColor==RED || rightColor==BLUE){
+	else if (leftColor==RED && rightColor==BLUE){
 		currentCard=COLOR_RED_BLUE;
-		set_rgb_led(LED2, 100, 0, 100);
+		chprintf((BaseSequentialStream *)&SDU1, "RedBlue");
+		//set_rgb_led(LED2, 255, 0, 255);
 	}
-	else{//chprintf((BaseSequentialStream *)&SDU1, "Wrong color of card");
-		set_body_led(LED7, 1);
+	else{
+		chprintf((BaseSequentialStream *)&SDU1, "Wrong color of card");
+		set_body_led(1);
 	}
 
 	cardScanned=1;

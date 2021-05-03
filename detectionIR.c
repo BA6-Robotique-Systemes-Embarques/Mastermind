@@ -19,7 +19,7 @@
 #define FRONT_PROX_SENSOR	0
 #define BACK_PROX_SENSOR	3
 #define MIN_DIST_PROX		50
-#define MIN_DIST_PROX_CARD	30
+#define MIN_DIST_PROX_CARD	50
 
 static THD_WORKING_AREA(waDetectionIR, 256);
 static THD_FUNCTION(DetectionIR, arg) {
@@ -50,29 +50,20 @@ static THD_FUNCTION(DetectionIR, arg) {
     			compteurFront=0;
     		}
 
-
     		//For visualisation : activate led if object very close to back proximity sensor
-    		chprintf((BaseSequentialStream *)&SDU1, "% proximite %-7d %-7d\r\n", get_prox(BACK_PROX_SENSOR),get_prox(FRONT_PROX_SENSOR));
-    		if ((get_prox(BACK_PROX_SENSOR)-calibration_back) > MIN_DIST_PROX){
+    		//chprintf((BaseSequentialStream *)&SDU1, "% proximite %-7d %-7d\r\n", get_prox(BACK_PROX_SENSOR),get_prox(FRONT_PROX_SENSOR));
+    		if((get_prox(BACK_PROX_SENSOR)-calibration_back) > MIN_DIST_PROX){
     			set_led(LED3,1);
     		}
     		else{
     			set_led(LED3,0);
     		}
 
-<<<<<<< HEAD
-    		if ((get_prox(FRONT_PROX_SENSOR)-calibration_front) > MIN_DIST_PROX_CARD){
-    	    	set_led(LED7,1);
+    		if((get_prox(FRONT_PROX_SENSOR)-calibration_front) > MIN_DIST_PROX_CARD){
+    			set_led(LED7,1);
     	    }
     	    else{
-    	    	set_led(LED7,0);
-=======
-    		if (get_prox(FRONT_PROX_SENSOR) > MIN_DIST_PROX_CARD){
-    	    		set_led(LED6,1);
-    	    }
-    	    else{
-    	    		set_led(LED6,0);
->>>>>>> 9a979681f4f69c3ddf644be0ee8325a773fedc80
+    	    		set_led(LED7,0);
     	    }
     		chThdSleepMilliseconds(100);
     	}

@@ -67,14 +67,7 @@ int main(void){
 	//init the motors
 	motors_init();
 
-	//starting_move();
-	/*setEtat('P');
-	gameCode code;
-	code.pin1=COLOR_RED_RED;
-	code.pin2=COLOR_GREEN_GREEN;
-	code.pin3=COLOR_RED_BLUE;
-	setGamecode(code);
-	setAttempt(COLOR_RED_RED,COLOR_GREEN_GREEN,COLOR_RED_BLUE);*/
+	starting_move();
 	//starts the thread used later
 	IR_thd_start();//détection de proximité, utilisé notamment pour le départ avec le signal de la main
 	run_thd_start();//thread générale du jeu : gère l'état du jeu et éventuellement les moteurs
