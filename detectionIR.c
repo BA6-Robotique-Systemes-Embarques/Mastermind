@@ -47,8 +47,9 @@ static THD_FUNCTION(DetectionIR, arg) {
     		}
     		if(compteurFront>9){
     			set_objectInFront(true);
-    			compteurFront=0;//Il faut garder la main pendant 1 seconde à côté du détecteur IR pour le relancer
+    			compteurFront=0;
     		}
+
 
     		//For visualisation : activate led if object very close to back proximity sensor
     		chprintf((BaseSequentialStream *)&SDU1, "% proximite %-7d %-7d\r\n", get_prox(BACK_PROX_SENSOR),get_prox(FRONT_PROX_SENSOR));
@@ -59,11 +60,19 @@ static THD_FUNCTION(DetectionIR, arg) {
     			set_led(LED3,0);
     		}
 
+<<<<<<< HEAD
     		if ((get_prox(FRONT_PROX_SENSOR)-calibration_front) > MIN_DIST_PROX_CARD){
     	    	set_led(LED7,1);
     	    }
     	    else{
     	    	set_led(LED7,0);
+=======
+    		if (get_prox(FRONT_PROX_SENSOR) > MIN_DIST_PROX_CARD){
+    	    		set_led(LED6,1);
+    	    }
+    	    else{
+    	    		set_led(LED6,0);
+>>>>>>> 9a979681f4f69c3ddf644be0ee8325a773fedc80
     	    }
     		chThdSleepMilliseconds(100);
     	}

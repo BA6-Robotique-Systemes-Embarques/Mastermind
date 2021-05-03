@@ -13,7 +13,7 @@
 #include <game_logic.h>
 #include <leds.h>
 
-#define SPEED_BASE 200 //la vitesse nominale des moteurs
+#define SPEED_BASE 200 //la vitesse nominale des moteurs pour le suivi de ligne
 #define POSITION_MOTEUR_CHAMP_VISION 1100 //la distance à laquelle la caméra voit convertie en position de moteur
 #define POSITION_MOTEUR_ROTATION180 700
 #define LEFT 0
@@ -22,7 +22,7 @@
 static char etat = ETAT_SCAN; //N = lighe noir, R = pastille rouge (lire carte),
 						//B = pastille bleue (arrêt après 3 lectures), P = pause (open-loop)
 
-static bool objectInFront = 0;
+static bool objectInFront = 0; //Updayed by rom detectionIR.c to confirm that an card is in front of the e-puck2
 static bool cardScanned = 0; //informs run.c that a card has been processed
 static uint8_t currentCard;
 
@@ -89,28 +89,9 @@ void scan_move(bool orientation){
 }
 
 
-void break_move(void){//appellée lorsque le robot voit une ligne rouge
-	left_motor_set_pos(0);
-	right_motor_set_pos(0);
-	right_motor_set_speed(400);
-	left_motor_set_speed(400);
-	while(left_motor_get_pos()<POSITION_MOTEUR_CHAMP_VISION)//correspondant à ~8 cm
-	{
-		__asm__ volatile ("nop");
-	}
-	right_motor_set_speed(0);
-	left_motor_set_speed(0);
-
-	//Turn 180°
-	left_motor_set_pos(0);
-	right_motor_set_pos(0);
-	right_motor_set_speed(400);
-	left_motor_set_speed(-400);
-	while (right_motor_get_pos()<POSITION_MOTEUR_ROTATION180){
-		__asm__ volatile ("nop");
-	}
-	right_motor_set_speed(0);
-	left_motor_set_speed(0);
+void break_move(void){ //appellée lorsque le robot voit une ligne rouge
+	move_dist(POSITION_MOTEUR_CHAMP_VISION);
+	turn_dist(POSITION_MOTEUR_ROTATION180);//Turn 180°
 }
 
 static THD_WORKING_AREA(waRun, 256);
@@ -157,6 +138,7 @@ static THD_FUNCTION(Run, arg) {
 
         		erreur_precedente=erreur;
         }
+<<<<<<< HEAD
         else if(etat==ETAT_SCAN)
         {
         	if(getTurnCounter()==0 || getTurnCounter()==1) //cards are to the left during first 6 scans
@@ -167,8 +149,19 @@ static THD_FUNCTION(Run, arg) {
     		erreur_precedente=0;
         	erreurtot=0;
 
+=======
+        else if(etat=='R'){
+        		if(getTurnCounter()==0 || getTurnCounter()==1) //cards are to the left during first 6 scans
+        			scan_move(LEFT);
+        		else if (getTurnCounter()>1) ////cards are to the right when the robot scans from the Paused placement
+        			scan_move(RIGHT);
+>>>>>>> 9a979681f4f69c3ddf644be0ee8325a773fedc80
 
+        		//reset PID :
+        		erreur_precedente=0;
+        		erreurtot=0;
         }
+<<<<<<< HEAD
         else if(etat==ETAT_GAMEHINT)
         {
         	right_motor_set_speed(0);
@@ -176,11 +169,18 @@ static THD_FUNCTION(Run, arg) {
         	break_move();
         	etat=ETAT_PAUSE;
         		/*
+=======
+        else if(etat=='B'){
+>>>>>>> 9a979681f4f69c3ddf644be0ee8325a773fedc80
         		right_motor_set_speed(0);
-        	    left_motor_set_speed(0);
+        		left_motor_set_speed(0);
+        		break_move();
+
+        		//reset PID :
         		erreur_precedente=0;
         		erreurtot=0;
-        	    	//boucle ouverte*/
+
+        		etat='P';
         }
 
         //100Hz
@@ -217,18 +217,29 @@ void set_objectInFront(bool object){
 }
 
 void set_currentCard(uint8_t leftColor, uint8_t rightColor){
-	if (leftColor==RED || rightColor==RED) {currentCard=COLOR_RED_RED;
-	set_rgb_led(LED2, 254, 0, 0);}
-	else if (leftColor==BLUE || rightColor==BLUE) {currentCard=COLOR_BLUE_BLUE;
-	set_rgb_led(LED2, 0, 0, 254);}
-	else if (leftColor==GREEN || rightColor==GREEN) {currentCard=COLOR_GREEN_GREEN;
-	set_rgb_led(LED2, 0, 254, 0);}
-	else if (leftColor==RED || rightColor==GREEN) {currentCard=COLOR_RED_GREEN;
-	set_rgb_led(LED2, 254, 254, 0);}
-	else if (leftColor==RED || rightColor==BLUE) {currentCard=COLOR_RED_BLUE;
-	set_rgb_led(LED2, 255, 0, 254);}
-	else {//chprintf((BaseSequentialStream *)&SDU1, "Wrong color of card");
-	set_led(LED7, 1);}
+	if (leftColor==RED || rightColor==RED){
+		currentCard=COLOR_RED_RED;
+		set_rgb_led(LED2, 100, 0, 0);
+	}
+	else if (leftColor==BLUE || rightColor==BLUE){
+		currentCard=COLOR_BLUE_BLUE;
+		set_rgb_led(LED2, 0, 0, 100);
+	}
+	else if (leftColor==GREEN || rightColor==GREEN){
+		currentCard=COLOR_GREEN_GREEN;
+		set_rgb_led(LED2, 0, 100, 0);
+	}
+	else if (leftColor==RED || rightColor==GREEN){
+		currentCard=COLOR_RED_GREEN;
+		set_rgb_led(LED2, 100, 100, 0);
+	}
+	else if (leftColor==RED || rightColor==BLUE){
+		currentCard=COLOR_RED_BLUE;
+		set_rgb_led(LED2, 100, 0, 100);
+	}
+	else{//chprintf((BaseSequentialStream *)&SDU1, "Wrong color of card");
+		set_body_led(LED7, 1);
+	}
 
 	cardScanned=1;
 }
