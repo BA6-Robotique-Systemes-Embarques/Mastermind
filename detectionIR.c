@@ -16,7 +16,7 @@
 #include <leds.h>
 #include <run.h>
 
-#define FRONT_PROX_SENSOR	7
+#define FRONT_PROX_SENSOR	0
 #define BACK_PROX_SENSOR	3
 #define MIN_DIST_PROX		50
 #define MIN_DIST_PROX_CARD	30
@@ -29,17 +29,20 @@ static THD_FUNCTION(DetectionIR, arg) {
     unsigned int compteurBack=0;
     unsigned int compteurFront=0;
 
+    int calibration_front=get_prox(FRONT_PROX_SENSOR);
+    int calibration_back=get_prox(BACK_PROX_SENSOR);
+
     while(1){
-    		if(getEtat()=='P'&& get_prox(BACK_PROX_SENSOR) > MIN_DIST_PROX){
+    		if(getEtat()==ETAT_PAUSE && ((get_prox(BACK_PROX_SENSOR)-calibration_back) > MIN_DIST_PROX)){
     			compteurBack++;
     		}
     		if(compteurBack>9){
     			compteurBack=0;//Il faut garder la main pendant 1 seconde à côté du détecteur IR pour le relancer
-    			setEtat('N');
+    			setEtat(ETAT_FOLLOW);
     		}
 
 
-    		if(getEtat()=='R' && (get_prox(FRONT_PROX_SENSOR) > MIN_DIST_PROX_CARD)){//Makes sure that a card is in front of the robot when scanning
+    		if(getEtat()==ETAT_SCAN && ((get_prox(FRONT_PROX_SENSOR)-calibration_front) > MIN_DIST_PROX_CARD)){//Makes sure that a card is in front of the robot when scanning
     			compteurFront++;
     		}
     		if(compteurFront>9){
@@ -48,19 +51,19 @@ static THD_FUNCTION(DetectionIR, arg) {
     		}
 
     		//For visualisation : activate led if object very close to back proximity sensor
-    		//chprintf((BaseSequentialStream *)&SDU1, "% proximite  %-7d\r\n", get_prox(BACK_PROX_SENSOR));
-    		if (get_prox(BACK_PROX_SENSOR) > MIN_DIST_PROX){
+    		chprintf((BaseSequentialStream *)&SDU1, "% proximite %-7d %-7d\r\n", get_prox(BACK_PROX_SENSOR),get_prox(FRONT_PROX_SENSOR));
+    		if ((get_prox(BACK_PROX_SENSOR)-calibration_back) > MIN_DIST_PROX){
     			set_led(LED3,1);
     		}
     		else{
     			set_led(LED3,0);
     		}
 
-    		if (get_prox(FRONT_PROX_SENSOR) > MIN_DIST_PROX_CARD){
-    	    	set_led(LED6,1);
+    		if ((get_prox(FRONT_PROX_SENSOR)-calibration_front) > MIN_DIST_PROX_CARD){
+    	    	set_led(LED7,1);
     	    }
     	    else{
-    	    	set_led(LED6,0);
+    	    	set_led(LED7,0);
     	    }
     		chThdSleepMilliseconds(100);
     	}

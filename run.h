@@ -1,6 +1,11 @@
 #ifndef PI_REGULATOR_H
 #define PI_REGULATOR_H
 
+#define ETAT_FOLLOW 'N'
+#define ETAT_SCAN 'R'
+#define ETAT_GAMEHINT 'B'
+#define ETAT_PAUSE 'P'
+
 //start the PI regulator thread
 void run_thd_start(void);
 void starting_move(void);

@@ -19,7 +19,7 @@
 #define LEFT 0
 #define RIGHT 1
 
-static char etat = 'R'; //N = lighe noir, R = pastille rouge (lire carte),
+static char etat = ETAT_SCAN; //N = lighe noir, R = pastille rouge (lire carte),
 						//B = pastille bleue (arrêt après 3 lectures), P = pause (open-loop)
 
 static bool objectInFront = 0;
@@ -135,7 +135,7 @@ static THD_FUNCTION(Run, arg) {
     while(1){
         time = chVTGetSystemTime();
         //chprintf((BaseSequentialStream *)&SDU1, "% etat  %-7c\r\n", etat);
-        if(etat=='N'){
+        if(etat==ETAT_FOLLOW){
         		//alors suit la ligne noir
         		erreur=getPos(); //Erreur entre -320 et 320
         	    erreurtot+=erreur;
@@ -157,7 +157,7 @@ static THD_FUNCTION(Run, arg) {
 
         		erreur_precedente=erreur;
         }
-        else if(etat=='R')
+        else if(etat==ETAT_SCAN)
         {
         	if(getTurnCounter()==0 || getTurnCounter()==1) //cards are to the left during first 6 scans
         		scan_move(LEFT);
@@ -169,12 +169,12 @@ static THD_FUNCTION(Run, arg) {
 
 
         }
-        else if(etat=='B')
+        else if(etat==ETAT_GAMEHINT)
         {
         	right_motor_set_speed(0);
         	left_motor_set_speed(0);
         	break_move();
-        	etat='P';
+        	etat=ETAT_PAUSE;
         		/*
         		right_motor_set_speed(0);
         	    left_motor_set_speed(0);
@@ -200,11 +200,11 @@ char getEtat(void){
 
 void setEtat(char c){
 	switch(c){
-		case 'P' : etat = 'P';break;
-		case 'N' : etat = 'N';break;
-		case 'R' : etat = 'R';break;
-		case 'G' : etat = 'G';break;
-		case 'B' : etat = 'B';break;
+		case ETAT_PAUSE : etat = ETAT_PAUSE;break;
+		case ETAT_FOLLOW : etat = ETAT_FOLLOW;break;
+		case ETAT_SCAN : etat = ETAT_SCAN;break;
+		case ETAT_GAMEHINT : etat = ETAT_GAMEHINT;break;
+		//case 'G' : etat = 'G';break;
 	}
 }
 

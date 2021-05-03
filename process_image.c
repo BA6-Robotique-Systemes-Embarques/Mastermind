@@ -132,7 +132,7 @@ static THD_FUNCTION(ProcessImage, arg) {
 		//gets the pointer to the array filled with the last image in RGB565    
 		img_buff_ptr = dcmi_get_last_image_ptr();
 
-		if(getEtat()=='N')
+		if(getEtat()==ETAT_FOLLOW)
 		{
 			float meanR=0;
 			float meanG=0;
@@ -169,13 +169,13 @@ static THD_FUNCTION(ProcessImage, arg) {
 			pos_width(imageG, meanG);
 
 			if((imageB[pos+IMAGE_BUFFER_SIZE/2]<meanB) && (imageR[pos+IMAGE_BUFFER_SIZE/2]>meanR)){
-				setEtat('R');//si au milieu de la ligne on a un du rouge
+				setEtat(ETAT_SCAN);//si au milieu de la ligne on a un du rouge
 			}
 			else if((imageB[pos+IMAGE_BUFFER_SIZE/2]>meanB) && (imageR[pos+IMAGE_BUFFER_SIZE/2]<meanR)){
-				setEtat('B');//si au milieu de la ligne on a un du bleu
+				setEtat(ETAT_GAMEHINT);//si au milieu de la ligne on a un du bleu
 			}
 		}
-		else if(getEtat()=='R' && get_objectInFront())  //Extract the colors of 2 pixels in order to find the colors of the card
+		else if(getEtat()==ETAT_SCAN && get_objectInFront())  //Extract the colors of 2 pixels in order to find the colors of the card
 		{
 			uint8_t leftPixel[RGB] = {0};
 			uint8_t rightPixel[RGB] = {0};
@@ -202,7 +202,7 @@ static THD_FUNCTION(ProcessImage, arg) {
 			leftPixel[GREEN] = (((*(img_buff_ptr+2*i) & 0b00000111)<<3) | ((*(img_buff_ptr+2*i+1)) >>5))/2;
 			leftPixel[BLUE] = (uint8_t)img_buff_ptr[(2*i)+1]&0x1F;
 
-			i = 5*IMAGE_BUFFER_SIZE/6; // right position
+			i = 4*IMAGE_BUFFER_SIZE/6; // right position
 			rightPixel[RED]=((uint8_t)(img_buff_ptr[2*i]) & 0xF8)>>3;
 			rightPixel[GREEN] = (((*(img_buff_ptr+2*i) & 0b00000111)<<3) | ((*(img_buff_ptr+2*i+1)) >>5))/2;
 			rightPixel[BLUE] = (uint8_t)img_buff_ptr[(2*i)+1]&0x1F;
