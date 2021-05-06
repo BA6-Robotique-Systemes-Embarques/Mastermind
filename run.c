@@ -22,10 +22,12 @@
 static char etat = ETAT_FOLLOW; //ETAT_FOLLOW = N = lighe noir, R = ligne rouge (arrêt après 3 lectures),
 						//ETAT_SCAN = B = ligne bleue (lire carte), P = pause
 
-static bool ReadytoScan = 0;
-static bool objectInFront = 0; //Updayed by rom detectionIR.c to confirm that an card is in front of the e-puck2
-static bool cardScanned = 0; //informs run.c that a card has been processed
+static bool ReadytoScan = false;
+static bool objectInFront = false; //Updated by rom detectionIR.c to confirm that an card is in front of the e-puck2
+static bool cardScanned = false; //informs run.c that a card has been processed
 static uint8_t currentCard;
+
+static bool ignoreSCAN = false;
 
 void move_dist(int motorPos){ //position positive = avancer, négative = reculer
 	left_motor_set_pos(0);
@@ -61,7 +63,6 @@ void turn_dist(int motorPos){ //position positive = clockwise, negative = counte
 	left_motor_set_speed(0);
 }
 
-
 void starting_move(void){
 	//Get out of the beginning slot
 	move_dist(-1250);
@@ -71,7 +72,7 @@ void starting_move(void){
 	move_dist(-300);
 }
 
-void scan_move(bool orientation){
+void scan_move(bool orientation){ //Large function to handle the entire scanning process
 	//open loop forward and turn
 	move_dist(POSITION_MOTEUR_CHAMP_VISION);
 	if (orientation==RIGHT) turn_dist(-1*POSITION_MOTEUR_ROTATION180/2);
@@ -83,12 +84,13 @@ void scan_move(bool orientation){
 	{
 		chThdSleepMilliseconds(10);
 	}
+
+	//Resets booleans used to communicate to other threads, turning them off
 	ReadytoScan = false;
 	objectInFront = false;
 	cardScanned=0;
 	setAttemptPin(currentCard);
-    chprintf((BaseSequentialStream *)&SDU1, "% Current Card = %-7d\r\n", currentCard);
-
+    //chprintf((BaseSequentialStream *)&SDU1, "% Current Card = %-7d\r\n", currentCard);
 
 
 	//open loop turn
@@ -96,6 +98,9 @@ void scan_move(bool orientation){
 	else if (orientation==LEFT) turn_dist(-1*POSITION_MOTEUR_ROTATION180/2);
 }
 
+void turnAround_move(void){
+	turn_dist(POSITION_MOTEUR_ROTATION180);
+}
 
 void break_move(void){ //appellée lorsque le robot voit une ligne rouge
 	move_dist(POSITION_MOTEUR_CHAMP_VISION);
@@ -147,21 +152,33 @@ static THD_FUNCTION(Run, arg) {
 
         		erreur_precedente=erreur;
         }
-        else if(etat==ETAT_SCAN){
-        		if(getTurnCounter()==0 || getTurnCounter()==1) //cards are to the left during first 6 scans
-        			scan_move(LEFT);
-			else if (getTurnCounter()>1) ////cards are to the right when the robot scans from the Paused placement
+        else if(etat==ETAT_SCAN && !ignoreSCAN){
+        	if(getTurnCounter()==0 || getTurnCounter()==1) //(cards are to the left during first 6 scans)
+        		{scan_move(LEFT);}
+			else if (getTurnCounter()>1){ //(cards are to the right when the robot scans from the Paused placement)
+				unsigned int TC_beforeScan = getTurnCounter();
 				scan_move(RIGHT);
 
-        		erreur_precedente=0;
-        		erreurtot=0;
-        		etat=ETAT_FOLLOW;
+				//Moves back to pause spot once the turn's card have all been scanned
+				if (TC_beforeScan!=getTurnCounter()){
+					turnAround_move();
+					ignoreSCAN = true;
+				}
+			}
+
+    		//reset PID :
+        	erreur_precedente=0;
+        	erreurtot=0;
+
+        	etat=ETAT_FOLLOW;
         }
 
         else if(etat==ETAT_GAMEHINT){
         		right_motor_set_speed(0);
         		left_motor_set_speed(0);
         		break_move();
+
+        		ignoreSCAN = false; //turns back on the ability to detect scanning spots
 
         		//reset PID :
         		erreur_precedente=0;
