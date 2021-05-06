@@ -2,11 +2,12 @@
 #define GAME_LOGIC_H
 
 //code de couleurs par moitié de carte :
-#define COLOR_RED_RED 0
-#define COLOR_GREEN_GREEN 1
-#define COLOR_BLUE_BLUE 2
-#define COLOR_RED_GREEN 3
-#define COLOR_RED_BLUE 4
+#define COLOR_RED_GREEN 0
+#define COLOR_GREEN_RED 1
+#define COLOR_RED_BLUE 2
+#define COLOR_BLUE_RED 3
+#define COLOR_RED_RED 4
+#define COLOR_WRONG 5
 
 // Code structure whether it's a guess or the original code
 typedef struct {

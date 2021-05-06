@@ -72,7 +72,7 @@ int main(void){
 	IR_thd_start();//détection de proximité, utilisé notamment pour le départ avec le signal de la main
 	run_thd_start();//thread générale du jeu : gère l'état du jeu et éventuellement les moteurs
 	process_image_start();//gère la capture d'image et son analyse
-	//affichage_start();//affichage des indices de jeu sur les LEDS
+	affichage_start();//affichage des indices de jeu sur les LEDS
 
     //Infinite loop
     while (1) {

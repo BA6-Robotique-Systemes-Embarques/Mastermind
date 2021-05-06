@@ -45,9 +45,9 @@ static THD_FUNCTION(DetectionIR, arg) {
     		if(getEtat()==ETAT_SCAN && ((get_prox(FRONT_PROX_SENSOR)-calibration_front) > MIN_DIST_PROX_CARD)){//Makes sure that a card is in front of the robot when scanning
     			compteurFront++;
     		}
-    		if(compteurFront>9){
+    		if(compteurFront>19){
     			set_objectInFront(true);
-    			compteurFront=0;
+    			compteurFront=0;//Il faut garder la carte pendant 2 secondes en face du détecteur IR
     		}
 
     		//For visualisation : activate led if object very close to back proximity sensor

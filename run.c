@@ -14,14 +14,15 @@
 #include <leds.h>
 
 #define SPEED_BASE 250 //la vitesse nominale des moteurs pour le suivi de ligne
-#define POSITION_MOTEUR_CHAMP_VISION 900 //la distance à laquelle la caméra voit convertie en position de moteur
+#define POSITION_MOTEUR_CHAMP_VISION 720 //la distance à laquelle la caméra voit convertie en position de moteur
 #define POSITION_MOTEUR_ROTATION180 680
 #define LEFT 0
 #define RIGHT 1
 
-static char etat = ETAT_FOLLOW; //N = lighe noir, R = pastille rouge (lire carte),
-						//B = pastille bleue (arrêt après 3 lectures), P = pause (open-loop)
+static char etat = ETAT_FOLLOW; //ETAT_FOLLOW = N = lighe noir, R = ligne rouge (arrêt après 3 lectures),
+						//ETAT_SCAN = B = ligne bleue (lire carte), P = pause
 
+static bool ReadytoScan = 0;
 static bool objectInFront = 0; //Updayed by rom detectionIR.c to confirm that an card is in front of the e-puck2
 static bool cardScanned = 0; //informs run.c that a card has been processed
 static uint8_t currentCard;
@@ -63,7 +64,7 @@ void turn_dist(int motorPos){ //position positive = clockwise, negative = counte
 
 void starting_move(void){
 	//Get out of the beginning slot
-	move_dist(-1100);
+	move_dist(-1250);
 
 	//Turn towards the line to follow
 	turn_dist(-POSITION_MOTEUR_ROTATION180/2);
@@ -76,13 +77,19 @@ void scan_move(bool orientation){
 	if (orientation==RIGHT) turn_dist(-1*POSITION_MOTEUR_ROTATION180/2);
 	else if (orientation==LEFT) turn_dist(POSITION_MOTEUR_ROTATION180/2);
 
+	ReadytoScan = true;
+
 	while(!cardScanned) //waits for processing of card colors
 	{
 		chThdSleepMilliseconds(10);
 	}
-	objectInFront = 0;
+	ReadytoScan = false;
+	objectInFront = false;
 	cardScanned=0;
 	setAttemptPin(currentCard);
+    chprintf((BaseSequentialStream *)&SDU1, "% Current Card = %-7d\r\n", currentCard);
+
+
 
 	//open loop turn
 	if (orientation==RIGHT) turn_dist(POSITION_MOTEUR_ROTATION180/2);
@@ -110,13 +117,14 @@ static THD_FUNCTION(Run, arg) {
     float erreur_precedente=0;
     float erreurtot=0;
 
-    float Kp=0.5;
-    float Ki=0.1;
-    float Kd=0.5;
+    float Kp=1;
+    //float Ki=0.1;
+    float Ki=0;
+    //float Kd=0.5;
+    float Kd=0;
 
     while(1){
         time = chVTGetSystemTime();
-        chprintf((BaseSequentialStream *)&SDU1, "% etat  %-7c\r\n", etat);
         if(etat==ETAT_FOLLOW){
         		//alors suit la ligne noir
         		erreur=getPos(); //Erreur entre -320 et 320
@@ -161,6 +169,7 @@ static THD_FUNCTION(Run, arg) {
 
         		etat=ETAT_PAUSE;
         }
+
         //100 Hz :
         chThdSleepUntilWindowed(time, time + MS2ST(10));
     }
@@ -193,37 +202,14 @@ void set_objectInFront(bool object){
 	objectInFront=object;
 }
 
-void set_currentCard(uint8_t leftColor, uint8_t rightColor){
-	//chprintf((BaseSequentialStream *)&SDU1, "% leftColor= %-7d % right Color = %-7d\r\n", leftColor, rightColor);
-	if(leftColor==RED && rightColor==RED){
-		currentCard=COLOR_RED_RED;
-		chprintf((BaseSequentialStream *)&SDU1, "RedRed");
-		//set_rgb_led(LED2, 255, 0, 0);
-	}
-	else if(leftColor==BLUE &&rightColor==BLUE){
-		currentCard=COLOR_BLUE_BLUE;
-		chprintf((BaseSequentialStream *)&SDU1, "BlueBlue");
-		//set_rgb_led(LED2, 0, 0, 255);
-	}
-	else if (leftColor==GREEN && rightColor==GREEN){
-		currentCard=COLOR_GREEN_GREEN;
-		chprintf((BaseSequentialStream *)&SDU1, "GreenGreen");
-		//set_rgb_led(LED2, 0, 255, 0);
-	}
-	else if (leftColor==RED && rightColor==GREEN){
-		currentCard=COLOR_RED_GREEN;
-		chprintf((BaseSequentialStream *)&SDU1, "RedGreen");
-		//set_rgb_led(LED2, 255, 255, 0);
-	}
-	else if (leftColor==RED && rightColor==BLUE){
-		currentCard=COLOR_RED_BLUE;
-		chprintf((BaseSequentialStream *)&SDU1, "RedBlue");
-		//set_rgb_led(LED2, 255, 0, 255);
-	}
-	else{
-		chprintf((BaseSequentialStream *)&SDU1, "Wrong color of card");
-		set_body_led(1);
-	}
+bool getReadytoScan(void){
+	return ReadytoScan;
+}
 
-	cardScanned=1;
+void set_currentCard(uint8_t card){
+	//chprintf((BaseSequentialStream *)&SDU1, "% Card = %-7d\r\n", card);
+	if(card != COLOR_WRONG){
+		cardScanned=1;
+		currentCard = card;
+	}
 }

@@ -9,6 +9,7 @@
 #include <process_image.h>
 #include <run.h>
 #include <leds.h>
+#include <game_logic.h>
 
 static float distance_cm = 0;
 static int pos;
@@ -63,10 +64,6 @@ uint8_t colorOfPixel(uint8_t* Pixel){
 	if (Pixel[GREEN]>mean) greenB=true;
 	if (Pixel[BLUE]>mean) blueB=true;
 
-	/*	if (Pixel[RED]>meanR){redB=true;}
-	if (Pixel[GREEN]>meanG){greenB=true;}
-	if (Pixel[BLUE]>meanB){blueB=true;}*/
-
 	if (redB && greenB){
 		if (Pixel[RED]>Pixel[GREEN]) return RED;
 		else return GREEN;
@@ -85,7 +82,42 @@ uint8_t colorOfPixel(uint8_t* Pixel){
 	if (redB) return RED;
 	else if (greenB) return GREEN;
 	else if (blueB) return BLUE;
-	else return BLUE;			//ARBITRARY COLOR, THIS RETURN IS IF NO COLOR WAS DETECTED
+	else return RED;			//ARBITRARY COLOR, THIS RETURN IS IF NO COLOR WAS DETECTED
+}
+
+uint8_t colorOfCard(uint8_t* Pixel1, uint8_t* Pixel2){
+	if(Pixel1[RED]-Pixel2[RED]<5 && Pixel1[GREEN]-Pixel2[GREEN]<5 && Pixel1[BLUE]-Pixel2[BLUE]<5){
+		return COLOR_RED_RED;//si on observe une cloche pour les 3 couleurs
+	}
+	else{
+		uint8_t leftColor=colorOfPixel(Pixel1);
+		uint8_t rightColor=colorOfPixel(Pixel2);
+		if (leftColor==RED && rightColor==GREEN){
+			return COLOR_RED_GREEN;
+			//chprintf((BaseSequentialStream *)&SDU1, "RedGreen");
+			//set_rgb_led(LED2, 255, 255, 0);
+		}
+		else if (leftColor==GREEN && rightColor==RED){
+			return COLOR_GREEN_RED;
+			//chprintf((BaseSequentialStream *)&SDU1, "RedGreen");
+			//set_rgb_led(LED2, 255, 255, 0);
+		}
+		else if (leftColor==RED && rightColor==BLUE){
+			return COLOR_RED_BLUE;
+			//chprintf((BaseSequentialStream *)&SDU1, "RedBlue");
+			//set_rgb_led(LED2, 255, 0, 255);
+		}
+		else if (leftColor==BLUE && rightColor==RED){
+			return COLOR_BLUE_RED;
+			//chprintf((BaseSequentialStream *)&SDU1, "RedBlue");
+			//set_rgb_led(LED2, 255, 0, 255);
+		}
+		else{
+			//chprintf((BaseSequentialStream *)&SDU1, "Wrong color of card");
+			set_body_led(2); //Toggle body LED to
+			return COLOR_WRONG;
+		}
+	}
 }
 
 //---------------Semaphore---------------
@@ -102,8 +134,6 @@ static THD_FUNCTION(CaptureImage, arg) {
 	dcmi_enable_double_buffering();
 	dcmi_set_capture_mode(CAPTURE_ONE_SHOT);
 	dcmi_prepare();
-	//int time_start;
-	//int total_time;
     while(1){
         //starts a capture
 		dcmi_capture_start();
@@ -125,7 +155,7 @@ static THD_FUNCTION(ProcessImage, arg) {
 	uint8_t imageR[IMAGE_BUFFER_SIZE] = {0};
 	uint8_t imageG[IMAGE_BUFFER_SIZE] = {0};
 	uint8_t imageB[IMAGE_BUFFER_SIZE] = {0};
-	//bool envoi =0;
+	bool envoi =0;
 
 
     while(1){
@@ -169,7 +199,7 @@ static THD_FUNCTION(ProcessImage, arg) {
 
 			pos_width(imageG, meanG);
 
-			chprintf((BaseSequentialStream *)&SDU1, "% BlueCentre = %-7d % BleuComparaison = %-7d\r\n", imageB[pos+IMAGE_BUFFER_SIZE/2], (int)meanB);
+			//chprintf((BaseSequentialStream *)&SDU1, "% BlueCentre = %-7d % BleuComparaison = %-7d\r\n", imageB[pos+IMAGE_BUFFER_SIZE/2], (int)meanB);
 
 			if(((float)imageB[pos+IMAGE_BUFFER_SIZE/2]<0.8*meanB) && ((float)imageR[pos+IMAGE_BUFFER_SIZE/2]>1.3*meanR)){
 				setEtat(ETAT_GAMEHINT);//si au milieu de la ligne on a un du rouge
@@ -178,7 +208,7 @@ static THD_FUNCTION(ProcessImage, arg) {
 				setEtat(ETAT_SCAN);//si au milieu de la ligne on a un du bleu
 			}
 		}
-		else if(getEtat()==ETAT_SCAN && get_objectInFront()){
+		else if(getEtat()==ETAT_SCAN && get_objectInFront() && getReadytoScan()){
 			//Extract the colors of 2 pixels in order to find the colors of the card
 			uint8_t leftPixel[RGB] = {0};
 			uint8_t rightPixel[RGB] = {0};
@@ -200,23 +230,22 @@ static THD_FUNCTION(ProcessImage, arg) {
 			meanG/=IMAGE_BUFFER_SIZE/4;
 			meanB/=IMAGE_BUFFER_SIZE/4;*/
 
-			unsigned int i = 2*IMAGE_BUFFER_SIZE/6; // left position
+			unsigned int i = 1*IMAGE_BUFFER_SIZE/4; // left position
 			leftPixel[RED]= ((uint8_t)(img_buff_ptr[2*i]) & 0xF8)>>3;
 			leftPixel[GREEN] = (((*(img_buff_ptr+2*i) & 0b00000111)<<3) | ((*(img_buff_ptr+2*i+1)) >>5))/2;
 			leftPixel[BLUE] = (uint8_t)img_buff_ptr[(2*i)+1]&0x1F;
 
-			i = 4*IMAGE_BUFFER_SIZE/6; // right position
+			i = 3*IMAGE_BUFFER_SIZE/4; // right position
 			rightPixel[RED]=((uint8_t)(img_buff_ptr[2*i]) & 0xF8)>>3;
 			rightPixel[GREEN] = (((*(img_buff_ptr+2*i) & 0b00000111)<<3) | ((*(img_buff_ptr+2*i+1)) >>5))/2;
 			rightPixel[BLUE] = (uint8_t)img_buff_ptr[(2*i)+1] & 0x1F;
 
-			//chprintf((BaseSequentialStream *)&SDU1, "% etat %-7d %-7d\r\n", colorOfPixel(leftPixel),colorOfPixel(rightPixel));
 			//send the color information to run module
-			set_currentCard(colorOfPixel(leftPixel), colorOfPixel(rightPixel));
+			set_currentCard(colorOfCard(leftPixel, rightPixel));
 		}
 		//affichage ordinateur :
-		/*if (envoi){
-			SendUint8ToComputer(imageR, IMAGE_BUFFER_SIZE);
+		/*if(envoi){
+			SendUint8ToComputer(imageG, IMAGE_BUFFER_SIZE);
 		}
 		envoi = !envoi;*/
     }
