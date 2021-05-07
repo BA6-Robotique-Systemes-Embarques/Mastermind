@@ -36,7 +36,7 @@ void pos_width(uint8_t* image, float mean){
 
 	for(unsigned int i=0; i<IMAGE_BUFFER_SIZE; i++){
 		if(image[i]>mean && left==0){
-			if(image[i+5]<0.7*mean && image[i+10]<0.7*mean ){
+			if(image[i+5]<1*mean && image[i+10]<0.8*mean ){
 				left=i+5;
 				i+=10;
 			}
@@ -199,12 +199,14 @@ static THD_FUNCTION(ProcessImage, arg) {
 
 			pos_width(imageG, meanG);
 
+			//chprintf((BaseSequentialStream *)&SDU1, "% Centre = %-7d \r\n", pos);
+
 			//chprintf((BaseSequentialStream *)&SDU1, "% BlueCentre = %-7d % BleuComparaison = %-7d\r\n", imageB[pos+IMAGE_BUFFER_SIZE/2], (int)meanB);
 
-			if(((float)imageB[pos+IMAGE_BUFFER_SIZE/2]<0.8*meanB) && ((float)imageR[pos+IMAGE_BUFFER_SIZE/2]>1.3*meanR)){
+			if(((float)imageB[pos+IMAGE_BUFFER_SIZE/2]<0.8*meanB) && ((float)imageR[pos+IMAGE_BUFFER_SIZE/2]>(1.5*meanR))){
 				setEtat(ETAT_GAMEHINT);//si au milieu de la ligne on a un du rouge
 			}
-			else if(((float)imageB[pos+IMAGE_BUFFER_SIZE/2]>1.1*meanB) && ((float)imageR[pos+IMAGE_BUFFER_SIZE/2]<0.8*meanR)){
+			else if(((float)imageB[pos+IMAGE_BUFFER_SIZE/2]>1.0*meanB) && ((float)imageR[pos+IMAGE_BUFFER_SIZE/2]<0.8*meanR)){
 				setEtat(ETAT_SCAN);//si au milieu de la ligne on a un du bleu
 			}
 		}

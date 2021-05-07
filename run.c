@@ -14,7 +14,7 @@
 #include <leds.h>
 
 #define SPEED_BASE 250 //la vitesse nominale des moteurs pour le suivi de ligne
-#define POSITION_MOTEUR_CHAMP_VISION 720 //la distance à laquelle la caméra voit convertie en position de moteur
+#define POSITION_MOTEUR_CHAMP_VISION 920 //la distance à laquelle la caméra voit convertie en position de moteur
 #define POSITION_MOTEUR_ROTATION180 680
 #define LEFT 0
 #define RIGHT 1
@@ -122,11 +122,11 @@ static THD_FUNCTION(Run, arg) {
     float erreur_precedente=0;
     float erreurtot=0;
 
-    float Kp=1;
-    //float Ki=0.1;
-    float Ki=0;
-    //float Kd=0.5;
-    float Kd=0;
+    float Kp=2;
+    float Ki=0.1;
+    //float Ki=0;
+    float Kd=0.5;
+    //float Kd=0;
 
     while(1){
         time = chVTGetSystemTime();

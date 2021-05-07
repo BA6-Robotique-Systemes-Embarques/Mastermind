@@ -61,6 +61,7 @@ int main(void){
     //starts the camera
     dcmi_start();
 	po8030_start();
+	//po8030_set_awb(false);
 	//start the IR sensors and thread
 	proximity_start();
 	calibrate_ir();
