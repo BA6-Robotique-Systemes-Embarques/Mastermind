@@ -11,26 +11,17 @@
 #include <leds.h>
 #include <game_logic.h>
 
-static float distance_cm = 0;
-static int pos;
+static int pos; //Centre de la ligne noire, axe centré au milieu de l'image (pixel N° 320)
 
 
 //---------------GETTERS---------------
-float getDistanceCM(void){
-	return distance_cm;
-}
-
 int getPos(void){
 	return pos;
 }
 
 
 //---------------Image Calculations---------------
-void convert(float width){
-	distance_cm=2*738.1/width;
-}
-
-void pos_width(uint8_t* image, float mean){
+int pos_width(uint8_t* image, float mean){
 	int left=0;
 	int right=0;
 
@@ -49,9 +40,11 @@ void pos_width(uint8_t* image, float mean){
 
 	//pour éviter les bugs :
 	if(abs(pos-((right+left)/2-IMAGE_BUFFER_SIZE/2))<200  || pos==-IMAGE_BUFFER_SIZE/2){
-		pos=(right+left)/2-IMAGE_BUFFER_SIZE/2; // axe des x centré au milieu de l'image (pixel N° 320)
+		return (right+left)/2-IMAGE_BUFFER_SIZE/2; // axe des x centré au milieu de l'image (pixel N° 320)
 	}
-	//convert((float)width);
+	else{
+		return 0;
+	}
 	//chprintf((BaseSequentialStream *)&SDU1, "% Left= %-7d % Right= %-7d\r\n", left, right);
 }
 
@@ -195,16 +188,15 @@ static THD_FUNCTION(ProcessImage, arg) {
 			meanR/=IMAGE_BUFFER_SIZE;
 			meanG/=IMAGE_BUFFER_SIZE;
 			meanB/=IMAGE_BUFFER_SIZE;
-			//chprintf((BaseSequentialStream *)&SDU1, "% MeanBlue= %-7d\r\n", (int)meanG);
 
-			pos_width(imageG, meanG);
-
+			pos=pos_width(imageG, meanG); //axe des x centré au milieu de l'image (pixel N° 320)
+			//chprintf((BaseSequentialStream *)&SDU1, "% position  %-7d\r\n", pos);
 			//chprintf((BaseSequentialStream *)&SDU1, "% BlueCentre = %-7d % BleuComparaison = %-7d\r\n", imageB[pos+IMAGE_BUFFER_SIZE/2], (int)meanB);
 
 			if(((float)imageB[pos+IMAGE_BUFFER_SIZE/2]<0.8*meanB) && ((float)imageR[pos+IMAGE_BUFFER_SIZE/2]>1.3*meanR)){
 				setEtat(ETAT_GAMEHINT);//si au milieu de la ligne on a un du rouge
 			}
-			else if(((float)imageB[pos+IMAGE_BUFFER_SIZE/2]>1.1*meanB) && ((float)imageR[pos+IMAGE_BUFFER_SIZE/2]<0.8*meanR)){
+			else if(((float)imageB[pos+IMAGE_BUFFER_SIZE/2]>1.1*meanB) && ((float)imageR[pos+IMAGE_BUFFER_SIZE/2]<0.8*meanR) && !getIgnoreScan()){
 				setEtat(ETAT_SCAN);//si au milieu de la ligne on a un du bleu
 			}
 		}
@@ -244,14 +236,15 @@ static THD_FUNCTION(ProcessImage, arg) {
 			set_currentCard(colorOfCard(leftPixel, rightPixel));
 		}
 		//affichage ordinateur :
-		/*if(envoi){
-			SendUint8ToComputer(imageG, IMAGE_BUFFER_SIZE);
+		if(envoi){
+			SendUint8ToComputer(imageR, IMAGE_BUFFER_SIZE);
 		}
-		envoi = !envoi;*/
+		envoi = !envoi;
     }
 }
 
 void process_image_start(void){
 	chThdCreateStatic(waProcessImage, sizeof(waProcessImage), NORMALPRIO, ProcessImage, NULL);
 	chThdCreateStatic(waCaptureImage, sizeof(waCaptureImage), NORMALPRIO, CaptureImage, NULL);
+	pos=0;
 }

@@ -61,17 +61,18 @@ int main(void){
     //starts the camera
     dcmi_start();
 	po8030_start();
+
+	//init the motors and starts moving
+	motors_init();
+	starting_move();
+
 	//start the IR sensors and thread
 	proximity_start();
 	calibrate_ir();
-	//init the motors
-	motors_init();
-
-	starting_move();
 	//starts the thread used later
 	IR_thd_start();//détection de proximité, utilisé notamment pour le départ avec le signal de la main
-	run_thd_start();//thread générale du jeu : gère l'état du jeu et éventuellement les moteurs
 	process_image_start();//gère la capture d'image et son analyse
+	run_thd_start();//thread générale du jeu : gère l'état du jeu et éventuellement les moteurs
 	affichage_start();//affichage des indices de jeu sur les LEDS
 
     //Infinite loop
