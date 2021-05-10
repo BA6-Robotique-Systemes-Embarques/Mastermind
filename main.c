@@ -61,6 +61,7 @@ int main(void){
     //starts the camera
     dcmi_start();
 	po8030_start();
+	po8030_set_awb(false);
 
 	//init the motors and starts moving
 	motors_init();

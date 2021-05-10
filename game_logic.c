@@ -8,7 +8,8 @@
 #define MAX_NUM_TURN	 8
 
 #define CODING_TURN 0
-#define GUESSING_TURN 1
+#define FIRST_GUESSING_TURN 1
+#define GUESSING_TURN 2
 
 #define GAME_CONTINUES	0
 #define GAME_WON		1
@@ -94,6 +95,23 @@ void setAttemptPin(uint8_t currentPin){
 			break;
 		}
 	}
+	else if(turnCounter==FIRST_GUESSING_TURN){
+		switch (pin_num_from_attempt+1){
+		case 1:
+			attempt.pin3=currentPin;
+			pin_num_from_attempt++;
+			break;
+		case 2:
+			attempt.pin2=currentPin;
+			pin_num_from_attempt++;
+			break;
+		case 3:
+			attempt.pin1=currentPin;
+			pin_num_from_attempt=0;
+			guessCode();
+			break;
+		}
+	}
 	else if (turnCounter>=GUESSING_TURN){
 		switch (pin_num_from_attempt+1) {
 		case 1:
@@ -114,7 +132,7 @@ void setAttemptPin(uint8_t currentPin){
 
 }
 
-void setAttempt(uint8_t pin1, uint8_t pin2, uint8_t pin3){
+/*void setAttempt(uint8_t pin1, uint8_t pin2, uint8_t pin3){
 	if(pin1>=COLOR_RED_RED && pin2>=COLOR_RED_RED && pin3>=COLOR_RED_RED &&
 		pin1 <= COLOR_RED_BLUE && pin2 <= COLOR_RED_BLUE && pin3 <= COLOR_RED_BLUE){
 		attempt.pin1=pin1;
@@ -122,9 +140,9 @@ void setAttempt(uint8_t pin1, uint8_t pin2, uint8_t pin3){
 		attempt.pin3=pin3;
 	}
 	guessCode();
-}
+}*/
 
-void setGamecode(gameCode code){//used for initializing a full code2break without scanning
+/*void setGamecode(gameCode code){//used for initializing a full code2break without scanning
 	code2break[0] = code.pin1;
 	code2break[1] = code.pin2;
 	code2break[2] = code.pin3;
@@ -137,7 +155,7 @@ void setGamecode(gameCode code){//used for initializing a full code2break withou
 	attempt.pin1 =0;
 	attempt.pin2 =0;
 	attempt.pin3 =0;
-}
+}*/
 
 unsigned int getTurnCounter(void){
 	return turnCounter;
