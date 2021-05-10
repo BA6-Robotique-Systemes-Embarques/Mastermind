@@ -13,8 +13,8 @@
 #include <game_logic.h>
 #include <leds.h>
 
-#define SPEED_BASE 250 //la vitesse nominale des moteurs pour le suivi de ligne
-#define POSITION_MOTEUR_CHAMP_VISION 920 //la distance à laquelle la caméra voit convertie en position de moteur
+#define SPEED_BASE 400 //la vitesse nominale des moteurs pour le suivi de ligne
+#define POSITION_MOTEUR_CHAMP_VISION 590 //la distance à laquelle la caméra voit convertie en position de moteur
 #define POSITION_MOTEUR_ROTATION180 680
 #define LEFT 0
 #define RIGHT 1
@@ -123,13 +123,14 @@ static THD_FUNCTION(Run, arg) {
     float erreurtot=0;
 
     float Kp=2;
-    float Ki=0.1;
+    float Ki=0.011;
     //float Ki=0;
-    float Kd=0.5;
-    //float Kd=0;
+    //float Kd=1;
+    float Kd=0;
 
     while(1){
         time = chVTGetSystemTime();
+        //chprintf((BaseSequentialStream *)&SDU1, "% etat  %-7c\r\n", etat);
         if(etat==ETAT_FOLLOW){
         		//alors suit la ligne noir
         		erreur=getPos(); //Erreur entre -320 et 320
@@ -152,25 +153,24 @@ static THD_FUNCTION(Run, arg) {
 
         		erreur_precedente=erreur;
         }
-        else if(etat==ETAT_SCAN && !ignoreSCAN){
-        	if(getTurnCounter()==0 || getTurnCounter()==1) //(cards are to the left during first 6 scans)
-        		{scan_move(LEFT);}
-			else if (getTurnCounter()>1){ //(cards are to the right when the robot scans from the Paused placement)
-				unsigned int TC_beforeScan = getTurnCounter();
-				scan_move(RIGHT);
+        else if(etat==ETAT_SCAN){
+        		if(getTurnCounter()==0 || getTurnCounter()==1) //(cards are to the left during first 6 scans)
+        			scan_move(LEFT);
+        		else if (getTurnCounter()>1){ //(cards are to the right when the robot scans from the Paused placement)
+        			unsigned int TC_beforeScan = getTurnCounter();
+        			scan_move(RIGHT);
+        			//Moves back to pause spot once the turn's card have all been scanned
+        			if (TC_beforeScan!=getTurnCounter()){
+        				turnAround_move();
+        				ignoreSCAN = true;
+        			}
+        		}
 
-				//Moves back to pause spot once the turn's card have all been scanned
-				if (TC_beforeScan!=getTurnCounter()){
-					turnAround_move();
-					ignoreSCAN = true;
-				}
-			}
+        		//reset PID :
+        		erreur_precedente=0;
+        		erreurtot=0;
 
-    		//reset PID :
-        	erreur_precedente=0;
-        	erreurtot=0;
-
-        	etat=ETAT_FOLLOW;
+        		etat=ETAT_FOLLOW;
         }
 
         else if(etat==ETAT_GAMEHINT){
@@ -229,4 +229,8 @@ void set_currentCard(uint8_t card){
 		cardScanned=1;
 		currentCard = card;
 	}
+}
+
+bool getIgnoreScan(void){
+	return ignoreSCAN;
 }

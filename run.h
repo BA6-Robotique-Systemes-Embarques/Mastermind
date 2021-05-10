@@ -17,6 +17,7 @@ void setEtat(char c);
 bool getReadytoScan(void);
 
 bool get_objectInFront(void);
+bool getIgnoreScan(void);
 void set_objectInFront(bool object);
 
 void set_currentCard(uint8_t card);

@@ -6,7 +6,6 @@
 #define GREEN 1
 #define BLUE 2
 
-float getDistanceCM(void);
 void process_image_start(void);
 int getPos(void);
 
