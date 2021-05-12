@@ -199,10 +199,10 @@ static THD_FUNCTION(ProcessImage, arg) {
 			//chprintf((BaseSequentialStream *)&SDU1, "% position  %-7d\r\n", pos);
 			//chprintf((BaseSequentialStream *)&SDU1, "% BlueCentre = %-7d % BleuComparaison = %-7d\r\n", imageB[pos+IMAGE_BUFFER_SIZE/2], (int)meanB);
 
-			if(((float)imageB[pos+IMAGE_BUFFER_SIZE/2]<0.8*meanB) && ((float)imageR[pos+IMAGE_BUFFER_SIZE/2]>meanR)){
+			if(((float)imageB[pos+IMAGE_BUFFER_SIZE/2]<0.7*meanB) && ((float)imageR[pos+IMAGE_BUFFER_SIZE/2]>meanR)){
 				setEtat(ETAT_GAMEHINT);//si au milieu de la ligne on a un du rouge
 			}
-			else if(((float)imageB[pos+IMAGE_BUFFER_SIZE/2]>0.8*meanB) && ((float)imageR[pos+IMAGE_BUFFER_SIZE/2]<meanR) && !getIgnoreScan()){
+			else if(((float)imageB[pos+IMAGE_BUFFER_SIZE/2]>0.9*meanB) && ((float)imageR[pos+IMAGE_BUFFER_SIZE/2]<0.8*meanR) && !getIgnoreScan()){
 				setEtat(ETAT_SCAN);//si au milieu de la ligne on a un du bleu
 				set_body_led(1);
 			}

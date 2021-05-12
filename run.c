@@ -124,7 +124,6 @@ static THD_FUNCTION(Run, arg) {
 
     float Kp=2.8;
     float Ki=0.011;
-    //float Ki=0;
     //float Kd=1;
     float Kd=0;
 
