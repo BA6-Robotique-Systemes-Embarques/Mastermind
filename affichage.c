@@ -46,7 +46,7 @@ static THD_FUNCTION(Affichage, arg){
 
     		hintpins=getHints();
 
-    		if(getEtat()=='P' && hintpins.b_key+hintpins.w_key<=3){
+    		if(getEtat()==ETAT_PAUSE && hintpins.b_key+hintpins.w_key<=3){
     			unsigned int compteur_led=0;
     			if(hintpins.victory_state==1){
     				LEDs_update(seq_victory[sequence_pos]);

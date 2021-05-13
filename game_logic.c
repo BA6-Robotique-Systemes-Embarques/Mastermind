@@ -46,7 +46,9 @@ static void guessCode (void){
 		for(uint8_t i=0; i < NUMBER_OF_PINS; i++){
 			if (attempt_[i]==code2break[i])
 				b_key++;
-			else if ((attempt_[i]==code2break[(i+1)%3]) || (attempt_[i]==code2break[(i+2)%3]))
+			else if ((attempt_[i]==code2break[(i+1)%3]) && (attempt_[(i+1)%3]!=code2break[(i+1)%3]))
+				w_key++;
+			else if ((attempt_[i]==code2break[(i+2)%3]) && (attempt_[(i+1)%3]!=code2break[(i+2)%3]))
 				w_key++;
 		}
 
