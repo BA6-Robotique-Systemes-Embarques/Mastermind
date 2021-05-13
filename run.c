@@ -14,13 +14,14 @@
 #include <leds.h>
 
 #define SPEED_BASE 400 //la vitesse nominale des moteurs pour le suivi de ligne
-#define POSITION_MOTEUR_CHAMP_VISION 730 //la distance à laquelle la caméra voit convertie en position de moteur
+#define POSITION_MOTEUR_CHAMP_VISION 770 //la distance à laquelle la caméra voit convertie en position de moteur
 #define POSITION_MOTEUR_ROTATION180 660
-#define LEFT 0
-#define RIGHT 1
+#define RIGHT 0
+#define LEFT 1
+
 
 static char etat = ETAT_FOLLOW; //ETAT_FOLLOW = N = lighe noir, R = ligne rouge (arrêt après 3 lectures),
-						//ETAT_SCAN = B = ligne bleue (lire carte), P = pause
+						//ETAT_SCAN = B = ligne bleue (lire carte), P = pause, S = stop
 
 static bool ReadytoScan = false;
 static bool objectInFront = false; //Updated by rom detectionIR.c to confirm that an card is in front of the e-puck2
@@ -63,22 +64,30 @@ void turn_dist(int motorPos){ //position positive = clockwise, negative = counte
 	left_motor_set_speed(0);
 }
 
+void stopMotors(void){
+	right_motor_set_speed(0);
+	left_motor_set_speed(0);
+	left_motor_set_pos(0);
+	right_motor_set_pos(0);
+}
+
 void starting_move(void){
 	//Get out of the beginning slot
 	move_dist(10);
-	move_dist(-1250);
+	move_dist(-1210);
 
 	//Turn towards the line to follow
 	turn_dist(-POSITION_MOTEUR_ROTATION180/2);
-	move_dist(-300);
+	move_dist(-400);
 }
 
 void scan_move(bool orientation){ //Large function to handle the entire scanning process
 	//open loop forward and turn
 	move_dist(POSITION_MOTEUR_CHAMP_VISION);
-	if (orientation==RIGHT) turn_dist(-1*POSITION_MOTEUR_ROTATION180/2);
-	else if (orientation==LEFT) turn_dist(POSITION_MOTEUR_ROTATION180/2);
-	move_dist(120);
+	set_body_led(0);
+	if (orientation==LEFT) turn_dist(-1*POSITION_MOTEUR_ROTATION180/2);
+	else if (orientation==RIGHT) turn_dist(POSITION_MOTEUR_ROTATION180/2);
+	move_dist(100);
 
 	ReadytoScan = true;
 
@@ -93,9 +102,9 @@ void scan_move(bool orientation){ //Large function to handle the entire scanning
 	setAttemptPin(currentCard);
 
 	//open loop turn
-	move_dist(-120);
-	if (orientation==RIGHT) turn_dist(POSITION_MOTEUR_ROTATION180/2);
-	else if (orientation==LEFT) turn_dist(-1*POSITION_MOTEUR_ROTATION180/2);
+	move_dist(-100);
+	if (orientation==LEFT) turn_dist(POSITION_MOTEUR_ROTATION180/2);
+	else if (orientation==RIGHT) turn_dist(-1*POSITION_MOTEUR_ROTATION180/2);
 }
 
 void turnAround_move(void){
@@ -142,8 +151,8 @@ static THD_FUNCTION(Run, arg) {
     	        		erreurtot=-700.;
     	         }
 
-    	        speedR = (int)(SPEED_BASE-(Kp*erreur+Ki*erreurtot+Kd*(erreur-erreur_precedente)));
-    	        speedL = (int)(SPEED_BASE+(Kp*erreur+Ki*erreurtot+Kd*(erreur-erreur_precedente)));
+    	        speedR = SPEED_BASE-(Kp*erreur+Ki*erreurtot+Kd*(erreur-erreur_precedente));
+    	        speedL = SPEED_BASE+(Kp*erreur+Ki*erreurtot+Kd*(erreur-erreur_precedente));
 
     	        right_motor_set_speed(speedR);
         		left_motor_set_speed(speedL);
@@ -151,11 +160,11 @@ static THD_FUNCTION(Run, arg) {
         		erreur_precedente=erreur;
         }
         else if(etat==ETAT_SCAN){
-        		if(getTurnCounter()==0 || getTurnCounter()==1) //(cards are to the left during first 6 scans)
-        			scan_move(LEFT);
+        		if(getTurnCounter()==0 || getTurnCounter()==1) //(cards are to the right during first 6 scans)
+        			scan_move(RIGHT);
         		else if (getTurnCounter()>1){ //(cards are to the right when the robot scans from the Paused placement)
         			unsigned int TC_beforeScan = getTurnCounter();
-        			scan_move(RIGHT);
+        			scan_move(LEFT);
         			//Moves back to pause spot once the turn's card have all been scanned
         			if (TC_beforeScan!=getTurnCounter()){
         				turnAround_move();
@@ -206,6 +215,7 @@ void setEtat(char c){
 		case ETAT_FOLLOW : etat = ETAT_FOLLOW; break;
 		case ETAT_SCAN : etat = ETAT_SCAN; break;
 		case ETAT_GAMEHINT : etat = ETAT_GAMEHINT; break;
+		case ETAT_STOP : etat = ETAT_STOP; break;
 	}
 }
 
@@ -222,7 +232,7 @@ bool getReadytoScan(void){
 }
 
 void set_currentCard(uint8_t card){
-	chprintf((BaseSequentialStream *)&SDU1, "% Card = %-7d\r\n", card);
+	//chprintf((BaseSequentialStream *)&SDU1, "% Card = %-7d\r\n", card);
 	if(card != COLOR_WRONG){
 		currentCard = card;
 		cardScanned=1;

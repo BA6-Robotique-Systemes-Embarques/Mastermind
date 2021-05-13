@@ -16,16 +16,19 @@
 #include <main.h>
 #include <run.h>
 
-static const uint8_t seq_victory[6][3] = {
-{0, 0, 1}, // ON1
-{0, 1, 1}, // ON3
-{1, 1, 1}, // ON5
-{1, 1, 0}, // ON7
-{1, 0, 0}, // OFF1
-{0, 0, 0}, // OFF3
+static const uint8_t seq_game_over[8][4] = {
+	{0, 0, 0, 1}, // ON1
+	{0, 0, 1, 1}, // ON3
+	{0, 1, 1, 1}, // ON5
+	{1, 1, 1, 1}, // ON7
+	{1, 1, 1, 0}, // OFF1
+	{1, 1, 0, 0}, // OFF3
+	{1, 0, 0, 0}, // OFF5
+	{0, 0, 0, 0}, // OFF7
 };
 
 static void LEDs_update(const uint8_t *out){
+	out[3] ? set_led(LED3,0) : set_led(LED3,1);
 	out[2] ? set_led(LED5,0) : set_led(LED5,1);
 	out[1] ? set_led(LED7,0) : set_led(LED7,1);
 	out[0] ? set_led(LED1,0) : set_led(LED1,1);
@@ -39,7 +42,7 @@ static THD_FUNCTION(Affichage, arg){
 
     systime_t time;
     hintPins hintpins;
-    int sequence_pos=0;
+    uint8_t sequence_pos=0;
 
     while(1){
     		time = chVTGetSystemTime();
@@ -47,16 +50,16 @@ static THD_FUNCTION(Affichage, arg){
     		hintpins=getHints();
 
     		if(getEtat()==ETAT_PAUSE && hintpins.b_key+hintpins.w_key<=3){
-    			unsigned int compteur_led=0;
-    			if(hintpins.victory_state==1){
-    				LEDs_update(seq_victory[sequence_pos]);
-    				sequence_pos++;
-    				sequence_pos %=6;
+    			uint8_t compteur_led=0;
+    			set_rgb_led(LED8, 0, 0, 0);
+    			set_rgb_led(LED2, 0, 0, 0);
+    			if(hintpins.victory_state==1){ // victory
+    				set_body_led(1);
     			}
-    			else if(hintpins.victory_state==2){
-    				set_led(LED5,0);
-    				set_led(LED7,0);
-    				set_led(LED1,0);
+    			else if(hintpins.victory_state==2){ //game over
+    				LEDs_update(seq_game_over[sequence_pos]);
+    				sequence_pos++;
+    				sequence_pos %=8;
     			}
     			else{
     				switch(hintpins.b_key){

@@ -5,10 +5,12 @@
 #define ETAT_SCAN 'B'
 #define ETAT_GAMEHINT 'R'
 #define ETAT_PAUSE 'P'
+#define ETAT_STOP 'S'
 
 //start the PI regulator thread
 void run_thd_start(void);
 void starting_move(void);
+void stopMotors(void);
 
 //Getters et setters :
 char getEtat(void);

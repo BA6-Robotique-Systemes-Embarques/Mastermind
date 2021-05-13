@@ -2,6 +2,9 @@
 #include <string.h>
 #include "ch.h"
 #include "hal.h"
+#include <chprintf.h>
+#include <leds.h>
+
 #include <main.h>
 #include <game_logic.h>
 
@@ -28,6 +31,30 @@ static uint8_t pin_num_from_attempt = 0;
 
 //Called each time the codebreaker attempts to guess the gamecode :
 //Updates the key given an attempt and a code2break
+
+static void affichage (uint8_t card){
+	if(card == COLOR_BLUE_RED){
+		set_rgb_led(LED8, 0, 0, 255);
+		set_rgb_led(LED2, 255, 0, 0);
+	}
+	else if(card ==COLOR_GREEN_RED){
+		set_rgb_led(LED8, 0, 255, 0);
+		set_rgb_led(LED2, 255, 0, 0);
+	}
+	else if(card ==COLOR_RED_BLUE){
+		set_rgb_led(LED8, 255, 0, 0);
+		set_rgb_led(LED2, 0, 0, 255);
+	}
+	else if(card == COLOR_RED_GREEN){
+		set_rgb_led(LED8, 255, 0, 0);
+		set_rgb_led(LED2,0,255,0);
+	}
+	else if(card == COLOR_RED_RED){
+		set_rgb_led(LED8, 255, 0, 0);
+		set_rgb_led(LED2,255,0,0);
+	}
+}
+
 static void guessCode (void){
 	turnCounter++;
 
@@ -65,6 +92,8 @@ static void guessCode (void){
 	}
 }
 
+
+
 //-----------------Getters and setters------------------------------
 hintPins getHints(void){
 	return key;
@@ -72,6 +101,8 @@ hintPins getHints(void){
 
 void setAttemptPin(uint8_t currentPin){
 	if (turnCounter==CODING_TURN){
+		affichage(currentPin);
+		//chprintf((BaseSequentialStream *)&SD3, "% Current pin for code :  %-7d\r\n", currentPin);
 		switch (pin_num_from_attempt+1) {
 		case 1:
 			code2break[pin_num_from_attempt]=currentPin;
@@ -95,9 +126,12 @@ void setAttemptPin(uint8_t currentPin){
 			attempt.pin3 =0;
 			turnCounter++;
 			break;
+
 		}
 	}
 	else if(turnCounter==FIRST_GUESSING_TURN){
+		affichage(currentPin);
+		//chprintf((BaseSequentialStream *)&SD3, "% Current pin for first guess :  %-7d\r\n", currentPin);
 		switch (pin_num_from_attempt+1){
 		case 1:
 			attempt.pin3=currentPin;
@@ -115,6 +149,8 @@ void setAttemptPin(uint8_t currentPin){
 		}
 	}
 	else if (turnCounter>=GUESSING_TURN){
+		affichage(currentPin);
+		//chprintf((BaseSequentialStream *)&SD3, "% Current pin for guesses :  %-7d\r\n", currentPin);
 		switch (pin_num_from_attempt+1) {
 		case 1:
 			attempt.pin1=currentPin;
@@ -164,5 +200,6 @@ unsigned int getTurnCounter(void){
 }
 
 void resetTurnCounter(){
+	pin_num_from_attempt=0;
 	turnCounter=0;
 }

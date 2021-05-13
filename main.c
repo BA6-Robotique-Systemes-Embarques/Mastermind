@@ -13,6 +13,7 @@
 #include <chprintf.h>
 #include <sensors/proximity.h>
 #include <leds.h>
+#include <selector.h>
 
 #include <detectionIR.h>
 #include <process_image.h>
@@ -20,6 +21,10 @@
 #include <main.h>
 #include <affichage.h>
 #include <game_logic.h>
+
+#define START_GAME		1
+#define STOP_GAME		2
+#define RESTART_GAME		3
 
 
 messagebus_t bus;
@@ -50,6 +55,7 @@ int main(void){
     halInit();
     chSysInit();
     mpu_init();
+    spi_comm_start();
 
     messagebus_init(&bus, &bus_lock, &bus_condvar);
     parameter_namespace_declare(&parameter_root, NULL, NULL);
@@ -65,19 +71,41 @@ int main(void){
 
 	//init the motors and starts moving
 	motors_init();
-	starting_move();
+	set_rgb_led(LED8, 255, 0, 0);
+	set_rgb_led(LED2,0,255,0);
 
-	//start the IR sensors and thread
-	proximity_start();
-	calibrate_ir();
-	//starts the thread used later
-	IR_thd_start();//détection de proximité, utilisé notamment pour le départ avec le signal de la main
-	process_image_start();//gère la capture d'image et son analyse
-	run_thd_start();//thread générale du jeu : gère l'état du jeu et éventuellement les moteurs
-	affichage_start();//affichage des indices de jeu sur les LEDS
-
-    //Infinite loop
+	uint8_t selector=0;
+	uint8_t old_selector=0;
     while (1) {
+    		selector= get_selector();
+    		if(selector != old_selector && selector == START_GAME){ //Premier start
+    			old_selector=selector;
+    			starting_move();
+
+    			//start the IR sensors and thread
+    			proximity_start();
+    			calibrate_ir();
+
+    			//starts the thread used later
+    			IR_thd_start();//détection de proximité, utilisé notamment pour le départ avec le signal de la main
+    			process_image_start();//gère la capture d'image et son analyse
+    			run_thd_start();//thread générale du jeu : gère l'état du jeu et éventuellement les moteurs
+    			affichage_start();//affichage des indices de jeu sur les LEDS
+    		}
+    		else if(selector != old_selector && selector == STOP_GAME){ //stops the threads
+    			old_selector=selector;
+    			setEtat(ETAT_STOP);
+    			stopMotors();
+    			set_rgb_led(LED8, 0, 0, 0);//clears the rgb LEDs
+    			set_rgb_led(LED2, 0, 0, 0);
+    		}
+    		else if(selector != old_selector && selector == RESTART_GAME){ //restart
+    			old_selector=selector;
+    			resetTurnCounter();
+    			starting_move();
+    			setEtat(ETAT_FOLLOW);
+    		}
+
     	//Waits 1 second
         chThdSleepMilliseconds(1000);
     }

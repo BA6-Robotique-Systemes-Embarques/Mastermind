@@ -36,7 +36,7 @@ static THD_FUNCTION(DetectionIR, arg) {
     		if(getEtat()==ETAT_PAUSE && ((get_prox(BACK_PROX_SENSOR)-calibration_back) > MIN_DIST_PROX)){
     			compteurBack++;
     		}
-    		if(compteurBack>9){
+    		if(compteurBack>4){
     			compteurBack=0;//Il faut garder la main pendant 1 seconde à côté du détecteur IR pour le relancer
     			setEtat(ETAT_FOLLOW);
     		}
@@ -45,7 +45,7 @@ static THD_FUNCTION(DetectionIR, arg) {
     		if(getEtat()==ETAT_SCAN && ((get_prox(FRONT_PROX_SENSOR)-calibration_front) > MIN_DIST_PROX_CARD)){//Makes sure that a card is in front of the robot when scanning
     			compteurFront++;
     		}
-    		if(compteurFront>19){
+    		if(compteurFront>9){
     			set_objectInFront(true);
     			compteurFront=0;//Il faut garder la carte pendant 2 secondes en face du détecteur IR
     		}
@@ -65,7 +65,7 @@ static THD_FUNCTION(DetectionIR, arg) {
     	    else{
     	    		set_led(LED7,0);
     	    }*/
-    		chThdSleepMilliseconds(100);
+    		chThdSleepMilliseconds(200);
     	}
 }
 
