@@ -14,8 +14,8 @@
 #include <leds.h>
 
 #define SPEED_BASE 400 //la vitesse nominale des moteurs pour le suivi de ligne
-#define POSITION_MOTEUR_CHAMP_VISION 590 //la distance à laquelle la caméra voit convertie en position de moteur
-#define POSITION_MOTEUR_ROTATION180 680
+#define POSITION_MOTEUR_CHAMP_VISION 730 //la distance à laquelle la caméra voit convertie en position de moteur
+#define POSITION_MOTEUR_ROTATION180 660
 #define LEFT 0
 #define RIGHT 1
 
@@ -65,6 +65,7 @@ void turn_dist(int motorPos){ //position positive = clockwise, negative = counte
 
 void starting_move(void){
 	//Get out of the beginning slot
+	move_dist(10);
 	move_dist(-1250);
 
 	//Turn towards the line to follow
@@ -77,23 +78,22 @@ void scan_move(bool orientation){ //Large function to handle the entire scanning
 	move_dist(POSITION_MOTEUR_CHAMP_VISION);
 	if (orientation==RIGHT) turn_dist(-1*POSITION_MOTEUR_ROTATION180/2);
 	else if (orientation==LEFT) turn_dist(POSITION_MOTEUR_ROTATION180/2);
+	move_dist(120);
 
 	ReadytoScan = true;
 
-	while(!cardScanned) //waits for processing of card colors
-	{
-		chThdSleepMilliseconds(10);
+	while(!cardScanned){
+		chThdSleepMilliseconds(10); //waits for processing of card colors
 	}
 
 	//Resets booleans used to communicate to other threads, turning them off
 	ReadytoScan = false;
 	objectInFront = false;
-	cardScanned=0;
+	cardScanned=false;
 	setAttemptPin(currentCard);
-    //chprintf((BaseSequentialStream *)&SDU1, "% Current Card = %-7d\r\n", currentCard);
-
 
 	//open loop turn
+	move_dist(-120);
 	if (orientation==RIGHT) turn_dist(POSITION_MOTEUR_ROTATION180/2);
 	else if (orientation==LEFT) turn_dist(-1*POSITION_MOTEUR_ROTATION180/2);
 }
@@ -122,9 +122,8 @@ static THD_FUNCTION(Run, arg) {
     float erreur_precedente=0;
     float erreurtot=0;
 
-    float Kp=2;
+    float Kp=2.8;
     float Ki=0.011;
-    //float Ki=0;
     //float Kd=1;
     float Kd=0;
 
@@ -146,8 +145,6 @@ static THD_FUNCTION(Run, arg) {
     	        speedR = (int)(SPEED_BASE-(Kp*erreur+Ki*erreurtot+Kd*(erreur-erreur_precedente)));
     	        speedL = (int)(SPEED_BASE+(Kp*erreur+Ki*erreurtot+Kd*(erreur-erreur_precedente)));
 
-    	        //chprintf((BaseSequentialStream *)&SDU1, "% speedRight  %-7d\r\n", speedR);
-    	        //chprintf((BaseSequentialStream *)&SDU1, "% speedLeft  %-7d\r\n", speedL);
     	        right_motor_set_speed(speedR);
         		left_motor_set_speed(speedL);
 
@@ -170,6 +167,7 @@ static THD_FUNCTION(Run, arg) {
         		erreur_precedente=0;
         		erreurtot=0;
 
+        		set_body_led(0);
         		etat=ETAT_FOLLOW;
         }
 
@@ -224,10 +222,10 @@ bool getReadytoScan(void){
 }
 
 void set_currentCard(uint8_t card){
-	//chprintf((BaseSequentialStream *)&SDU1, "% Card = %-7d\r\n", card);
+	chprintf((BaseSequentialStream *)&SDU1, "% Card = %-7d\r\n", card);
 	if(card != COLOR_WRONG){
-		cardScanned=1;
 		currentCard = card;
+		cardScanned=1;
 	}
 }
 

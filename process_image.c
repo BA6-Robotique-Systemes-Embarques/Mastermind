@@ -77,40 +77,46 @@ uint8_t colorOfPixel(uint8_t* Pixel){
 	else if (blueB) return BLUE;
 	else return RED;			//ARBITRARY COLOR, THIS RETURN IS IF NO COLOR WAS DETECTED
 }
-
-uint8_t colorOfCard(uint8_t* Pixel1, uint8_t* Pixel2){
-	if(Pixel1[RED]-Pixel2[RED]<5 && Pixel1[GREEN]-Pixel2[GREEN]<5 && Pixel1[BLUE]-Pixel2[BLUE]<5){
+/*uint8_t colorOfCard(uint8_t* Pixel1, uint8_t* Pixel2){
+	uint8_t leftColor=colorOfPixel(Pixel1);
+	uint8_t rightColor=colorOfPixel(Pixel2);
+	if (leftColor==RED && rightColor==GREEN){
+		return COLOR_RED_GREEN;
+		//set_rgb_led(LED2, 255, 255, 0);
+	}
+	else if (leftColor==GREEN && rightColor==RED){
+		return COLOR_GREEN_RED;
+		//set_rgb_led(LED2, 255, 255, 0);
+	}
+	else if (leftColor==RED && rightColor==BLUE){
+		return COLOR_RED_BLUE;
+		//set_rgb_led(LED2, 255, 0, 255);
+	}
+	else if (leftColor==BLUE && rightColor==RED){
+		return COLOR_BLUE_RED;
+		//set_rgb_led(LED2, 255, 0, 255);
+	}
+	else if(Pixel1[RED]-Pixel2[RED]<5 && Pixel1[GREEN]-Pixel2[GREEN]<5 && Pixel1[BLUE]-Pixel2[BLUE]<5){
 		return COLOR_RED_RED;//si on observe une cloche pour les 3 couleurs
 	}
 	else{
-		uint8_t leftColor=colorOfPixel(Pixel1);
-		uint8_t rightColor=colorOfPixel(Pixel2);
-		if (leftColor==RED && rightColor==GREEN){
-			return COLOR_RED_GREEN;
-			//chprintf((BaseSequentialStream *)&SDU1, "RedGreen");
-			//set_rgb_led(LED2, 255, 255, 0);
-		}
-		else if (leftColor==GREEN && rightColor==RED){
-			return COLOR_GREEN_RED;
-			//chprintf((BaseSequentialStream *)&SDU1, "RedGreen");
-			//set_rgb_led(LED2, 255, 255, 0);
-		}
-		else if (leftColor==RED && rightColor==BLUE){
-			return COLOR_RED_BLUE;
-			//chprintf((BaseSequentialStream *)&SDU1, "RedBlue");
-			//set_rgb_led(LED2, 255, 0, 255);
-		}
-		else if (leftColor==BLUE && rightColor==RED){
-			return COLOR_BLUE_RED;
-			//chprintf((BaseSequentialStream *)&SDU1, "RedBlue");
-			//set_rgb_led(LED2, 255, 0, 255);
-		}
-		else{
-			//chprintf((BaseSequentialStream *)&SDU1, "Wrong color of card");
-			set_body_led(2); //Toggle body LED to
-			return COLOR_WRONG;
-		}
+		return COLOR_WRONG;
 	}
+}*/
+
+uint8_t colorOfCard(uint8_t* Pixel1, uint8_t* Pixel2){
+	uint8_t mean1=(Pixel1[RED]+Pixel1[GREEN]+Pixel1[BLUE])/3;
+	uint8_t mean2=(Pixel2[RED]+Pixel2[GREEN]+Pixel2[BLUE])/3;
+
+	if(1.4*Pixel1[RED]<Pixel2[RED]){
+		if(Pixel1[BLUE]>mean1) return COLOR_BLUE_RED;
+		else return COLOR_GREEN_RED;
+	}
+	else if(Pixel1[RED]>1.4*Pixel2[RED]){
+		if(Pixel2[BLUE]>mean2) return COLOR_RED_BLUE;
+		else return COLOR_RED_GREEN;
+	}
+	else return COLOR_RED_RED;
 }
 
 //---------------Semaphore---------------
@@ -193,11 +199,12 @@ static THD_FUNCTION(ProcessImage, arg) {
 			//chprintf((BaseSequentialStream *)&SDU1, "% position  %-7d\r\n", pos);
 			//chprintf((BaseSequentialStream *)&SDU1, "% BlueCentre = %-7d % BleuComparaison = %-7d\r\n", imageB[pos+IMAGE_BUFFER_SIZE/2], (int)meanB);
 
-			if(((float)imageB[pos+IMAGE_BUFFER_SIZE/2]<0.8*meanB) && ((float)imageR[pos+IMAGE_BUFFER_SIZE/2]>1.3*meanR)){
+			if(((float)imageB[pos+IMAGE_BUFFER_SIZE/2]<0.7*meanB) && ((float)imageR[pos+IMAGE_BUFFER_SIZE/2]>meanR)){
 				setEtat(ETAT_GAMEHINT);//si au milieu de la ligne on a un du rouge
 			}
-			else if(((float)imageB[pos+IMAGE_BUFFER_SIZE/2]>1.1*meanB) && ((float)imageR[pos+IMAGE_BUFFER_SIZE/2]<0.8*meanR) && !getIgnoreScan()){
+			else if(((float)imageB[pos+IMAGE_BUFFER_SIZE/2]>0.9*meanB) && ((float)imageR[pos+IMAGE_BUFFER_SIZE/2]<0.8*meanR) && !getIgnoreScan()){
 				setEtat(ETAT_SCAN);//si au milieu de la ligne on a un du bleu
+				set_body_led(1);
 			}
 		}
 		else if(getEtat()==ETAT_SCAN && get_objectInFront() && getReadytoScan()){
@@ -222,12 +229,12 @@ static THD_FUNCTION(ProcessImage, arg) {
 			meanG/=IMAGE_BUFFER_SIZE/4;
 			meanB/=IMAGE_BUFFER_SIZE/4;*/
 
-			unsigned int i = 1*IMAGE_BUFFER_SIZE/4; // left position
+			unsigned int i = 0.3*IMAGE_BUFFER_SIZE; // left position
 			leftPixel[RED]= ((uint8_t)(img_buff_ptr[2*i]) & 0xF8)>>3;
 			leftPixel[GREEN] = (((*(img_buff_ptr+2*i) & 0b00000111)<<3) | ((*(img_buff_ptr+2*i+1)) >>5))/2;
 			leftPixel[BLUE] = (uint8_t)img_buff_ptr[(2*i)+1]&0x1F;
 
-			i = 3*IMAGE_BUFFER_SIZE/4; // right position
+			i = 0.7*IMAGE_BUFFER_SIZE; // right position
 			rightPixel[RED]=((uint8_t)(img_buff_ptr[2*i]) & 0xF8)>>3;
 			rightPixel[GREEN] = (((*(img_buff_ptr+2*i) & 0b00000111)<<3) | ((*(img_buff_ptr+2*i+1)) >>5))/2;
 			rightPixel[BLUE] = (uint8_t)img_buff_ptr[(2*i)+1] & 0x1F;
@@ -236,15 +243,14 @@ static THD_FUNCTION(ProcessImage, arg) {
 			set_currentCard(colorOfCard(leftPixel, rightPixel));
 		}
 		//affichage ordinateur :
-		if(envoi){
+		/*if(envoi){
 			SendUint8ToComputer(imageR, IMAGE_BUFFER_SIZE);
 		}
-		envoi = !envoi;
+		envoi = !envoi;*/
     }
 }
 
 void process_image_start(void){
 	chThdCreateStatic(waProcessImage, sizeof(waProcessImage), NORMALPRIO, ProcessImage, NULL);
 	chThdCreateStatic(waCaptureImage, sizeof(waCaptureImage), NORMALPRIO, CaptureImage, NULL);
-	pos=0;
 }

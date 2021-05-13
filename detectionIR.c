@@ -50,7 +50,7 @@ static THD_FUNCTION(DetectionIR, arg) {
     			compteurFront=0;//Il faut garder la carte pendant 2 secondes en face du détecteur IR
     		}
 
-    		//For visualisation : activate led if object very close to back proximity sensor
+    		/*For visualisation : activate led if object very close to back proximity sensor
     		//chprintf((BaseSequentialStream *)&SDU1, "% proximite %-7d %-7d\r\n", get_prox(BACK_PROX_SENSOR),get_prox(FRONT_PROX_SENSOR));
     		if((get_prox(BACK_PROX_SENSOR)-calibration_back) > MIN_DIST_PROX){
     			set_led(LED3,1);
@@ -64,7 +64,7 @@ static THD_FUNCTION(DetectionIR, arg) {
     	    }
     	    else{
     	    		set_led(LED7,0);
-    	    }
+    	    }*/
     		chThdSleepMilliseconds(100);
     	}
 }
