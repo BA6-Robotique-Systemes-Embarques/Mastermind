@@ -19,7 +19,7 @@
 #define FRONT_PROX_SENSOR	0
 #define BACK_PROX_SENSOR	3
 #define MIN_DIST_PROX		50
-#define MIN_DIST_PROX_CARD	30
+#define MIN_DIST_PROX_CARD	50
 
 static THD_WORKING_AREA(waDetectionIR, 256);
 static THD_FUNCTION(DetectionIR, arg) {
