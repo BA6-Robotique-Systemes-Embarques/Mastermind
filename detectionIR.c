@@ -1,8 +1,8 @@
 /*
  * detectionIR.c
  *
- *  Created on: 20 Apr 2021
- *      Author: cyrilmonette
+ *  Created on: 20 April 2021
+ *      Author: Cyril Monette
  */
 #include "ch.h"
 #include "hal.h"
@@ -17,7 +17,7 @@
 #include <run.h>
 
 #define FRONT_PROX_SENSOR	0
-#define BACK_PROX_SENSOR	3
+#define BACK_PROX_SENSOR		3
 #define MIN_DIST_PROX		50
 #define MIN_DIST_PROX_CARD	50
 
@@ -26,8 +26,7 @@ static THD_FUNCTION(DetectionIR, arg) {
 
     chRegSetThreadName(__FUNCTION__);
     (void)arg;
-    unsigned int compteurBack=0;
-    unsigned int compteurFront=0;
+    uint8_t compteurBack=0, compteurFront=0;
 
     int calibration_front=get_prox(FRONT_PROX_SENSOR);
     int calibration_back=get_prox(BACK_PROX_SENSOR);
@@ -37,7 +36,7 @@ static THD_FUNCTION(DetectionIR, arg) {
     			compteurBack++;
     		}
     		if(compteurBack>4){
-    			compteurBack=0;//Il faut garder la main pendant 1 seconde à côté du détecteur IR pour le relancer
+    			compteurBack=0;//The hand needs to be kept close to the sensor for at least 1 second
     			setEtat(ETAT_FOLLOW);
     		}
 
@@ -46,8 +45,8 @@ static THD_FUNCTION(DetectionIR, arg) {
     			compteurFront++;
     		}
     		if(compteurFront>9){
-    			set_objectInFront(true);
-    			compteurFront=0;//Il faut garder la carte pendant 2 secondes en face du détecteur IR
+    			setObjectInFront(true);
+    			compteurFront=0;//The card needs to remain in front of the robot for at least 2 seconds
     		}
 
     		/*For visualisation : activate led if object very close to back proximity sensor

@@ -1,8 +1,8 @@
 /*
  * affichage.c
  *
- *  Created on: 29 Apr 2021
- *      Author: cyrilmonette
+ *  Created on: 29 April 2021
+ *      Author: Cyril Monette
  */
 
 #include "ch.h"
@@ -35,8 +35,8 @@ static void LEDs_update(const uint8_t *out){
 }
 
 
-static THD_WORKING_AREA(waAffichage, 256);
-static THD_FUNCTION(Affichage, arg){
+static THD_WORKING_AREA(waDisplay, 256);
+static THD_FUNCTION(Display, arg){
     chRegSetThreadName(__FUNCTION__);
     (void)arg;
 
@@ -109,7 +109,7 @@ static THD_FUNCTION(Affichage, arg){
     }
 }
 
-void affichage_start(void){
-	chThdCreateStatic(waAffichage, sizeof(waAffichage), NORMALPRIO, Affichage, NULL);
+void display_start(void){
+	chThdCreateStatic(waDisplay, sizeof(waDisplay), NORMALPRIO, Display, NULL);
 }
 

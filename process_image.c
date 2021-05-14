@@ -11,12 +11,9 @@
 #include <leds.h>
 #include <game_logic.h>
 
-static int pos; //Center of the black line, relative to the middle of the image (pixel N° 320)
+#define IMAGE_BUFFER_SIZE		640
 
-//---------------GETTERS---------------
-int getPos(void){
-	return pos;
-}
+static int pos; //Center of the black line, relative to the middle of the image (pixel N° 320)
 
 
 //---------------Image Calculations---------------
@@ -39,15 +36,12 @@ int pos_width(uint8_t* image, float mean){
 
 	//safety checks
 	if(abs(pos-((right+left)/2-IMAGE_BUFFER_SIZE/2))<200  || pos==-IMAGE_BUFFER_SIZE/2){
-		return (right+left)/2-IMAGE_BUFFER_SIZE/2; // x axis origin at pixel N° 320
+		return (right+left)/2-IMAGE_BUFFER_SIZE/2; // x axis' origin is located at pixel N° 320
 	}
-	else{
-		return 0;
-	}
-	//chprintf((BaseSequentialStream *)&SDU1, "% Left= %-7d % Right= %-7d\r\n", left, right);
+	else return 0;
 }
 
-uint8_t colorOfPixel(uint8_t* Pixel){
+/*uint8_t colorOfPixel(uint8_t* Pixel){
 	bool redB=0, greenB=0, blueB=0;
 
 	uint8_t mean=(Pixel[RED]+Pixel[GREEN]+Pixel[BLUE])/3;
@@ -76,7 +70,8 @@ uint8_t colorOfPixel(uint8_t* Pixel){
 	else if (blueB) return BLUE;
 	else return RED;			//ARBITRARY COLOR, THIS RETURN IS IF NO COLOR WAS DETECTED
 }
-/*uint8_t colorOfCard(uint8_t* Pixel1, uint8_t* Pixel2){
+
+uint8_t colorOfCard(uint8_t* Pixel1, uint8_t* Pixel2){
 	uint8_t leftColor=colorOfPixel(Pixel1);
 	uint8_t rightColor=colorOfPixel(Pixel2);
 	if (leftColor==RED && rightColor==GREEN){
@@ -153,20 +148,16 @@ static THD_FUNCTION(ProcessImage, arg) {
 	uint8_t imageR[IMAGE_BUFFER_SIZE] = {0};
 	uint8_t imageG[IMAGE_BUFFER_SIZE] = {0};
 	uint8_t imageB[IMAGE_BUFFER_SIZE] = {0};
-	bool envoi =0; //used when sending camera sensor information to the computer
+	//bool envoi =0; //used when sending camera sensor information to the computer
 
 
     while(1){
-    	//waits until an image has been captured
-        chBSemWait(&image_ready_sem);
+        chBSemWait(&image_ready_sem); //waits until an image has been captured
 
-        //gets the pointer to the array filled with the last image in RGB565
-		img_buff_ptr = dcmi_get_last_image_ptr();
+		img_buff_ptr = dcmi_get_last_image_ptr(); //gets the pointer to the array filled with the last image in RGB565
 
 		if(getEtat()==ETAT_FOLLOW){
-			float meanR=0;
-			float meanG=0;
-			float meanB=0;
+			float meanR=0, meanG=0, meanB=0;
 
 			//Extracts only the red pixels
 			for(uint16_t i=0; i<IMAGE_BUFFER_SIZE; i++){
@@ -204,7 +195,7 @@ static THD_FUNCTION(ProcessImage, arg) {
 				set_body_led(ON);
 			}
 		}
-		else if(getEtat()==ETAT_SCAN && get_objectInFront() && getReadytoScan()){
+		else if(getEtat()==ETAT_SCAN && getObjectInFront() && getReadytoScan()){
 			//Extract the colors of 2 pixels in order to find the colors of the card
 			uint8_t leftPixel[RGB] = {0};
 			uint8_t rightPixel[RGB] = {0};
@@ -237,7 +228,7 @@ static THD_FUNCTION(ProcessImage, arg) {
 			rightPixel[BLUE] = (uint8_t)img_buff_ptr[(2*i)+1] & 0x1F;
 
 			//send the color information to run module
-			set_currentCard(colorOfCard(leftPixel, rightPixel));
+			setCurrentCard(colorOfCard(leftPixel, rightPixel));
 		}
 		//affichage ordinateur :
 		/*if(envoi){
@@ -250,4 +241,9 @@ static THD_FUNCTION(ProcessImage, arg) {
 void process_image_start(void){
 	chThdCreateStatic(waProcessImage, sizeof(waProcessImage), NORMALPRIO, ProcessImage, NULL);
 	chThdCreateStatic(waCaptureImage, sizeof(waCaptureImage), NORMALPRIO, CaptureImage, NULL);
+}
+
+//---------------GETTERS AND SETTERS---------------
+int getPos(void){
+	return pos;
 }

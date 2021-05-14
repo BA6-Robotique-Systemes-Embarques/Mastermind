@@ -10,8 +10,7 @@
 #define OFF 0
 #define ON 1
 
-//start the PI regulator thread
-void run_thd_start(void);
+void run_thd_start(void); //starts the run thread
 void starting_move(void);
 void stopMotors(void);
 
@@ -20,11 +19,10 @@ char getEtat(void);
 void setEtat(char c);
 
 bool getReadytoScan(void);
-
-bool get_objectInFront(void);
+bool getObjectInFront(void);
 bool getIgnoreScan(void);
-void set_objectInFront(bool object);
+void setObjectInFront(bool object);
 
-void set_currentCard(uint8_t card);
+void setCurrentCard(uint8_t card);
 
 #endif /* PI_REGULATOR_H */

@@ -8,15 +8,15 @@
 #include <main.h>
 #include <game_logic.h>
 
-#define CODING_TURN 0
-#define FIRST_GUESSING_TURN 1
-#define GUESSING_TURN 2
-#define GAME_CONTINUES	0
-#define GAME_WON		1
-#define GAME_OVER		2
+#define CODING_TURN				0
+#define FIRST_GUESSING_TURN		1
+#define GUESSING_TURN			2
+#define GAME_CONTINUES			0
+#define GAME_WON					1
+#define GAME_OVER				2
 
-#define MAX_NUM_TURN	 8
-#define NUMBER_OF_PINS	3
+#define MAX_NUM_TURN	 			8
+#define NUMBER_OF_PINS			3
 
 //--------------Game data (static variables)-------------
 static unsigned int turnCounter = 0; // coding of the code2break is counted as a turn !
@@ -65,7 +65,7 @@ static void guessCode (void){
 	}
 }
 
-static void affichage (uint8_t card){//displays the given card with RGB LEDs
+static void displayCard(uint8_t card){//displays the given card with RGB LEDs
 	if(card == COLOR_BLUE_RED){
 		set_rgb_led(LED8, 0, 0, 255);
 		set_rgb_led(LED2, 255, 0, 0);
@@ -89,11 +89,11 @@ static void affichage (uint8_t card){//displays the given card with RGB LEDs
 }
 
 
-//-----------------Getters and setters------------------------------
+//-----------------GETTERS AND SETTERS------------------------------
 
 void setAttemptPin(uint8_t currentPin){
 	if (turnCounter==CODING_TURN){
-		affichage(currentPin);
+		displayCard(currentPin);
 		//chprintf((BaseSequentialStream *)&SD3, "% Current pin for code :  %-7d\r\n", currentPin);
 		switch (pin_num_from_attempt+1) {
 		case 1:
@@ -108,7 +108,7 @@ void setAttemptPin(uint8_t currentPin){
 			code2break[pin_num_from_attempt]=currentPin;
 			pin_num_from_attempt=0;
 
-			//other initialisations
+			//other initialisations :
 			key.b_key=0;
 			key.w_key=0;
 			key.victory_state=0;
@@ -121,7 +121,7 @@ void setAttemptPin(uint8_t currentPin){
 		}
 	}
 	else if(turnCounter==FIRST_GUESSING_TURN){
-		affichage(currentPin);
+		displayCard(currentPin);
 		//chprintf((BaseSequentialStream *)&SD3, "% Current pin for first guess :  %-7d\r\n", currentPin);
 		switch (pin_num_from_attempt+1){
 		case 1:
@@ -140,7 +140,7 @@ void setAttemptPin(uint8_t currentPin){
 		}
 	}
 	else if (turnCounter>=GUESSING_TURN){
-		affichage(currentPin);
+		displayCard(currentPin);
 		//chprintf((BaseSequentialStream *)&SD3, "% Current pin for guesses :  %-7d\r\n", currentPin);
 		switch (pin_num_from_attempt+1) {
 		case 1:

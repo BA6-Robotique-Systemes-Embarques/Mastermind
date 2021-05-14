@@ -1,8 +1,8 @@
 /*
  * detectionIR.h
  *
- *  Created on: 20 Apr 2021
- *      Author: cyrilmonette
+ *  Created on: 20 April 2021
+ *      Author: Cyril Monette
  */
 
 #ifndef DETECTIONIR_H_

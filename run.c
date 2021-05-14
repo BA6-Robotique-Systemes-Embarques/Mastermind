@@ -13,15 +13,15 @@
 #include <game_logic.h>
 #include <leds.h>
 
-#define SPEED_BASE 400 //la vitesse nominale des moteurs
+#define SPEED_BASE 					400 //la vitesse nominale des moteurs
 #define POSITION_MOTEUR_CHAMP_VISION 770 //Distance seen by the camera converted into motor position
-#define POSITION_MOTEUR_ROTATION180 660
+#define POSITION_MOTEUR_ROTATION180 	660
 #define RIGHT 0
 #define LEFT 1
 
-#define STARTUP_BACKUP_DIST 	-1210
+#define STARTUP_BACKUP_DIST 		-1210
 #define STARTUP_BACKUP_SAFETY 	10
-#define STARTUP_BACKUP_SETUP	-400
+#define STARTUP_BACKUP_SETUP		-400
 #define SCANNING_CLOSEUP_DIST	100
 
 static char etat = ETAT_FOLLOW;
@@ -148,53 +148,53 @@ static THD_FUNCTION(Run, arg) {
         time = chVTGetSystemTime();
 
         if(etat==ETAT_FOLLOW){
-        	erreur=getPos(); //Error between -320 and 320
-        	erreurtot+=erreur;
+        		erreur=getPos(); //Error between -320 and 320
+        		erreurtot+=erreur;
 
-        	if(erreurtot>700.){erreurtot=700.;}			//Anti Wind-up
-    	    else if(erreurtot<-700.){erreurtot=-700.;}	//Anti Wind-up
+        		if(erreurtot>700.)       erreurtot= 700.;	//Anti Wind-up
+        		else if(erreurtot<-700.) erreurtot=-700.;	//Anti Wind-up
 
-        	speedR = SPEED_BASE-(Kp*erreur+Ki*erreurtot+Kd*(erreur-erreur_precedente));
-    	    speedL = SPEED_BASE+(Kp*erreur+Ki*erreurtot+Kd*(erreur-erreur_precedente));
+        		speedR = SPEED_BASE-(Kp*erreur+Ki*erreurtot+Kd*(erreur-erreur_precedente));
+        		speedL = SPEED_BASE+(Kp*erreur+Ki*erreurtot+Kd*(erreur-erreur_precedente));
 
-    	    right_motor_set_speed(speedR);
-        	left_motor_set_speed(speedL);
+        		right_motor_set_speed(speedR);
+        		left_motor_set_speed(speedL);
 
-        	erreur_precedente=erreur;
+        		erreur_precedente=erreur;
         }
         else if(etat==ETAT_SCAN){
-        	if(getTurnCounter()==0 || getTurnCounter()==1) //cards are to the right during first 6 scans
-        		scan_move(RIGHT);
-        	else if (getTurnCounter()>1){ //cards are to the left when the robot scans from the red spot (PAUSE)
-        		unsigned int TC_beforeScan = getTurnCounter();
-        		scan_move(LEFT);
-        		//Moves back to pause spot once the 3 cards have been scanned
-        		if (TC_beforeScan!=getTurnCounter()){
-        			turnAround_move();
-        			ignoreSCAN = true;
+        		if(getTurnCounter()==0 || getTurnCounter()==1) //cards are to the right during first 6 scans
+        			scan_move(RIGHT);
+        		else if (getTurnCounter()>1){ //cards are to the left when the robot scans from the red spot (PAUSE)
+        			unsigned int TC_beforeScan = getTurnCounter();
+        			scan_move(LEFT);
+        			//Moves back to pause spot once the 3 cards have been scanned
+        			if (TC_beforeScan!=getTurnCounter()){
+        				turnAround_move();
+        				ignoreSCAN = true;
+        			}
         		}
-        	}
 
-        	//reset PID :
-        	erreur_precedente=0;
-        	erreurtot=0;
+        		//reset PID :
+        		erreur_precedente=0;
+        		erreurtot=0;
 
-        	set_body_led(OFF);
-        	etat=ETAT_FOLLOW;
+        		set_body_led(OFF);
+        		etat=ETAT_FOLLOW;
         }
 
         else if(etat==ETAT_GAMEHINT){
-        	right_motor_set_speed(0);
-        	left_motor_set_speed(0);
-        	break_move();
+        		right_motor_set_speed(0);
+        		left_motor_set_speed(0);
+        		break_move();
 
-        	ignoreSCAN = false; //turns back on the ability to detect scanning spots
+        		ignoreSCAN = false; //turns back on the ability to detect scanning spots
 
-        	//reset PID :
-        	erreur_precedente=0;
-        	erreurtot=0;
+        		//reset PID :
+        		erreur_precedente=0;
+        		erreurtot=0;
 
-        	etat=ETAT_PAUSE;
+        		etat=ETAT_PAUSE;
         }
 
         //100 Hz :
@@ -207,7 +207,7 @@ void run_thd_start(void){
 }
 
 
-//-------------------------Getters and setters :----------------------------
+//-------------------------GETTERS AND SETTERS----------------------------
 char getEtat(void){
 	return etat;
 }
@@ -222,11 +222,11 @@ void setEtat(char c){
 	}
 }
 
-bool get_objectInFront(void){
+bool getObjectInFront(void){
 	return objectInFront;
 }
 
-void set_objectInFront(bool object){
+void setObjectInFront(bool object){
 	objectInFront=object;
 }
 
@@ -234,7 +234,7 @@ bool getReadytoScan(void){
 	return ReadytoScan;
 }
 
-void set_currentCard(uint8_t card){
+void setCurrentCard(uint8_t card){
 	//chprintf((BaseSequentialStream *)&SDU1, "% Card = %-7d\r\n", card);
 	if(card != COLOR_WRONG){
 		currentCard = card;
