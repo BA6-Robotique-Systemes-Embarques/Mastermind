@@ -11,8 +11,7 @@
 #include <leds.h>
 #include <game_logic.h>
 
-static int pos; //Centre de la ligne noire, axe centré au milieu de l'image (pixel N° 320)
-
+static int pos; //Center of the black line, relative to the middle of the image (pixel N° 320)
 
 //---------------GETTERS---------------
 int getPos(void){
@@ -22,7 +21,7 @@ int getPos(void){
 
 //---------------Image Calculations---------------
 int pos_width(uint8_t* image, float mean){
-	int left=0;
+	int left=0; //left and right points defining the width of the black line
 	int right=0;
 
 	for(unsigned int i=0; i<IMAGE_BUFFER_SIZE; i++){
@@ -38,9 +37,9 @@ int pos_width(uint8_t* image, float mean){
 		}
 	}
 
-	//pour éviter les bugs :
+	//safety checks
 	if(abs(pos-((right+left)/2-IMAGE_BUFFER_SIZE/2))<200  || pos==-IMAGE_BUFFER_SIZE/2){
-		return (right+left)/2-IMAGE_BUFFER_SIZE/2; // axe des x centré au milieu de l'image (pixel N° 320)
+		return (right+left)/2-IMAGE_BUFFER_SIZE/2; // x axis origin at pixel N° 320
 	}
 	else{
 		return 0;
@@ -154,13 +153,14 @@ static THD_FUNCTION(ProcessImage, arg) {
 	uint8_t imageR[IMAGE_BUFFER_SIZE] = {0};
 	uint8_t imageG[IMAGE_BUFFER_SIZE] = {0};
 	uint8_t imageB[IMAGE_BUFFER_SIZE] = {0};
-	bool envoi =0;
+	bool envoi =0; //used when sending camera sensor information to the computer
 
 
     while(1){
-    		//waits until an image has been captured
+    	//waits until an image has been captured
         chBSemWait(&image_ready_sem);
-		//gets the pointer to the array filled with the last image in RGB565    
+
+        //gets the pointer to the array filled with the last image in RGB565
 		img_buff_ptr = dcmi_get_last_image_ptr();
 
 		if(getEtat()==ETAT_FOLLOW){
@@ -173,7 +173,6 @@ static THD_FUNCTION(ProcessImage, arg) {
 				//extracts first 5bits of the first byte
 				//takes nothing from the second byte
 				imageR[i] =((uint8_t)(img_buff_ptr[2*i]) & 0xF8)>>3;
-				//chprintf((BaseSequentialStream *)&SDU1, "% imageRed  %-7d\r\n", imageR[i]);
 				meanR+=imageR[i/2];
 			}
 
@@ -185,7 +184,7 @@ static THD_FUNCTION(ProcessImage, arg) {
 
 			//Extracts only the blue pixels
 			for(uint16_t i=0; i<(2*IMAGE_BUFFER_SIZE); i+=2){
-				//extracts las 5bits of the second byte
+				//extracts last 5bits of the second byte
 				//takes nothing from the first byte
 				imageB[i/2] = (uint8_t)img_buff_ptr[i+1]&0x1F;
 				meanB+=imageB[i/2];
@@ -195,16 +194,14 @@ static THD_FUNCTION(ProcessImage, arg) {
 			meanG/=IMAGE_BUFFER_SIZE;
 			meanB/=IMAGE_BUFFER_SIZE;
 
-			pos=pos_width(imageG, meanG); //axe des x centré au milieu de l'image (pixel N° 320)
-			//chprintf((BaseSequentialStream *)&SDU1, "% position  %-7d\r\n", pos);
-			//chprintf((BaseSequentialStream *)&SDU1, "% BlueCentre = %-7d % BleuComparaison = %-7d\r\n", imageB[pos+IMAGE_BUFFER_SIZE/2], (int)meanB);
+			pos=pos_width(imageG, meanG); //finds the position of the black line uing the green information
 
 			if(((float)imageB[pos+IMAGE_BUFFER_SIZE/2]<0.7*meanB) && ((float)imageR[pos+IMAGE_BUFFER_SIZE/2]>meanR)){
-				setEtat(ETAT_GAMEHINT);//si au milieu de la ligne on a un du rouge
+				setEtat(ETAT_GAMEHINT);//if the middle of the line contains red
 			}
 			else if(((float)imageB[pos+IMAGE_BUFFER_SIZE/2]>0.9*meanB) && ((float)imageR[pos+IMAGE_BUFFER_SIZE/2]<0.8*meanR) && !getIgnoreScan()){
-				setEtat(ETAT_SCAN);//si au milieu de la ligne on a un du bleu
-				set_body_led(1);
+				setEtat(ETAT_SCAN);//if the middle of the line contains blue
+				set_body_led(ON);
 			}
 		}
 		else if(getEtat()==ETAT_SCAN && get_objectInFront() && getReadytoScan()){

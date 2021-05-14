@@ -7,12 +7,15 @@
 #define ETAT_PAUSE 'P'
 #define ETAT_STOP 'S'
 
+#define OFF 0
+#define ON 1
+
 //start the PI regulator thread
 void run_thd_start(void);
 void starting_move(void);
 void stopMotors(void);
 
-//Getters et setters :
+//Getters and setters :
 char getEtat(void);
 void setEtat(char c);
 

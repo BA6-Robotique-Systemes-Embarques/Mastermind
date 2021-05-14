@@ -8,53 +8,26 @@
 #include <main.h>
 #include <game_logic.h>
 
-#define MAX_NUM_TURN	 8
-
 #define CODING_TURN 0
 #define FIRST_GUESSING_TURN 1
 #define GUESSING_TURN 2
-
 #define GAME_CONTINUES	0
 #define GAME_WON		1
 #define GAME_OVER		2
 
+#define MAX_NUM_TURN	 8
 #define NUMBER_OF_PINS	3
 
+//--------------Game data (static variables)-------------
 static unsigned int turnCounter = 0; // coding of the code2break is counted as a turn !
-
 static uint8_t code2break[NUMBER_OF_PINS];
 static hintPins key;
 static gameCode attempt;
-
 static uint8_t pin_num_from_attempt = 0;
 
 
-//Called each time the codebreaker attempts to guess the gamecode :
+//Function called after each codebreaker attempt to guess the gamecode
 //Updates the key given an attempt and a code2break
-
-static void affichage (uint8_t card){
-	if(card == COLOR_BLUE_RED){
-		set_rgb_led(LED8, 0, 0, 255);
-		set_rgb_led(LED2, 255, 0, 0);
-	}
-	else if(card ==COLOR_GREEN_RED){
-		set_rgb_led(LED8, 0, 255, 0);
-		set_rgb_led(LED2, 255, 0, 0);
-	}
-	else if(card ==COLOR_RED_BLUE){
-		set_rgb_led(LED8, 255, 0, 0);
-		set_rgb_led(LED2, 0, 0, 255);
-	}
-	else if(card == COLOR_RED_GREEN){
-		set_rgb_led(LED8, 255, 0, 0);
-		set_rgb_led(LED2,0,255,0);
-	}
-	else if(card == COLOR_RED_RED){
-		set_rgb_led(LED8, 255, 0, 0);
-		set_rgb_led(LED2,255,0,0);
-	}
-}
-
 static void guessCode (void){
 	turnCounter++;
 
@@ -62,7 +35,7 @@ static void guessCode (void){
 		key.victory_state=GAME_OVER;
 	}
 	else{
-		uint8_t b_key = 0; //good color+position
+		uint8_t b_key = 0; //good color good position
 		uint8_t w_key = 0; //good color wrong position
 
 		uint8_t attempt_[NUMBER_OF_PINS];
@@ -92,12 +65,31 @@ static void guessCode (void){
 	}
 }
 
+static void affichage (uint8_t card){//displays the given card with RGB LEDs
+	if(card == COLOR_BLUE_RED){
+		set_rgb_led(LED8, 0, 0, 255);
+		set_rgb_led(LED2, 255, 0, 0);
+	}
+	else if(card ==COLOR_GREEN_RED){
+		set_rgb_led(LED8, 0, 255, 0);
+		set_rgb_led(LED2, 255, 0, 0);
+	}
+	else if(card ==COLOR_RED_BLUE){
+		set_rgb_led(LED8, 255, 0, 0);
+		set_rgb_led(LED2, 0, 0, 255);
+	}
+	else if(card == COLOR_RED_GREEN){
+		set_rgb_led(LED8, 255, 0, 0);
+		set_rgb_led(LED2,0,255,0);
+	}
+	else if(card == COLOR_RED_RED){
+		set_rgb_led(LED8, 255, 0, 0);
+		set_rgb_led(LED2,255,0,0);
+	}
+}
 
 
 //-----------------Getters and setters------------------------------
-hintPins getHints(void){
-	return key;
-}
 
 void setAttemptPin(uint8_t currentPin){
 	if (turnCounter==CODING_TURN){
@@ -116,7 +108,7 @@ void setAttemptPin(uint8_t currentPin){
 			code2break[pin_num_from_attempt]=currentPin;
 			pin_num_from_attempt=0;
 
-			//autres initialisations
+			//other initialisations
 			key.b_key=0;
 			key.w_key=0;
 			key.victory_state=0;
@@ -126,7 +118,6 @@ void setAttemptPin(uint8_t currentPin){
 			attempt.pin3 =0;
 			turnCounter++;
 			break;
-
 		}
 	}
 	else if(turnCounter==FIRST_GUESSING_TURN){
@@ -168,6 +159,10 @@ void setAttemptPin(uint8_t currentPin){
 		}
 	}
 
+}
+
+hintPins getHints(void){
+	return key;
 }
 
 /*void setAttempt(uint8_t pin1, uint8_t pin2, uint8_t pin3){
