@@ -141,8 +141,10 @@ static THD_FUNCTION(Run, arg) {
     float erreur_precedente=0;
     float erreurtot=0;
 
-    float Kp=2.8;
-    float Ki=0.011;
+    //float Kp=2.8;
+    float Kp=2;
+    //float Ki=0.011;
+    float Ki=0.04;
     float Kd=0;
 
     while(1){
@@ -163,6 +165,7 @@ static THD_FUNCTION(Run, arg) {
 
         		erreur_precedente=erreur;
         }
+
         else if(etat==ETAT_SCAN){
         		if(getTurnCounter()==0 && soloMode){
         			move_dist(POSITION_MOTEUR_CHAMP_VISION/2);
@@ -190,8 +193,6 @@ static THD_FUNCTION(Run, arg) {
         }
 
         else if(etat==ETAT_GAMEHINT){
-        		right_motor_set_speed(0);
-        		left_motor_set_speed(0);
         		break_move();
 
         		ignoreSCAN = false; //turns back on the ability to detect scanning spots
@@ -202,7 +203,7 @@ static THD_FUNCTION(Run, arg) {
 
         		etat=ETAT_PAUSE;
         }
-
+        chprintf((BaseSequentialStream *)&SD3, "% Temps run = %d\r\n", chVTGetSystemTime()-time);
         //100 Hz :
         chThdSleepUntilWindowed(time, time + MS2ST(10));
     }
@@ -252,10 +253,10 @@ bool getIgnoreScan(void){
 	return ignoreSCAN;
 }
 
-bool getsoloMode(void){
+bool getSoloMode(void){
 	return soloMode;
 }
 
-void setsoloMode(bool mode){
+void setSoloMode(bool mode){
 	soloMode=mode;
 }

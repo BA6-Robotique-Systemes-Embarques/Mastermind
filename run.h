@@ -20,8 +20,8 @@ bool getReadytoScan(void);
 bool getObjectInFront(void);
 bool getIgnoreScan(void);
 void setObjectInFront(bool object);
-void setsoloMode(bool mode);
-bool getsoloMode(void);
+void setSoloMode(bool mode);
+bool getSoloMode(void);
 void setCurrentCard(uint8_t card);
 
 #endif /* PI_REGULATOR_H */

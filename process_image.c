@@ -122,25 +122,27 @@ static THD_FUNCTION(CaptureImage, arg) {
     chRegSetThreadName(__FUNCTION__);
     (void)arg;
     bool capture = true;
+    systime_t time;
 
-	//Takes pixels 0 to IMAGE_BUFFER_SIZE of the line 470 + 471 (minimum 2 lines because reasons)
+	//Takes pixels 0 to IMAGE_BUFFER_SIZE of the line 470 + 471
 	po8030_advanced_config(FORMAT_RGB565, 0, 470, IMAGE_BUFFER_SIZE, 2, SUBSAMPLING_X1, SUBSAMPLING_X1);
 	dcmi_enable_double_buffering();
 	dcmi_set_capture_mode(CAPTURE_ONE_SHOT);
 	dcmi_prepare();
     while(1){
-    	if(capture){
-    		//starts a capture
-    		dcmi_capture_start();
-    		//waits for the capture to be done
-    		wait_image_ready();
-    		//signals an image has been captured
-    		chBSemSignal(&image_ready_sem);
-    	}
-    	else {
-    		chThdYield();
-    	}
-    	capture = !capture;
+    		if(capture){
+    			time = chVTGetSystemTime();
+    			//starts a capture
+    			dcmi_capture_start();
+    			//waits for the capture to be done
+    			wait_image_ready();
+    			//signals an image has been captured
+
+    			chBSemSignal(&image_ready_sem);
+    	        chprintf((BaseSequentialStream *)&SD3, "% Temps CaptureImage = %d\r\n", chVTGetSystemTime()-time);
+    		}
+    		else chThdYield();
+    		capture = !capture;
     }
 }
 
@@ -155,11 +157,13 @@ static THD_FUNCTION(ProcessImage, arg) {
 	uint8_t imageR[IMAGE_BUFFER_SIZE] = {0};
 	uint8_t imageG[IMAGE_BUFFER_SIZE] = {0};
 	uint8_t imageB[IMAGE_BUFFER_SIZE] = {0};
+	systime_t time;
 	//bool envoi =0; //used when sending camera sensor information to the computer
 
 
     while(1){
         chBSemWait(&image_ready_sem); //waits until an image has been captured
+        time=chVTGetSystemTime();
 
 		img_buff_ptr = dcmi_get_last_image_ptr(); //gets the pointer to the array filled with the last image in RGB565
 
@@ -194,12 +198,12 @@ static THD_FUNCTION(ProcessImage, arg) {
 
 			pos=pos_width(imageG, meanG); //finds the position of the black line uing the green information
 
-			if(((float)imageB[pos+IMAGE_BUFFER_SIZE/2]<0.7*meanB) && ((float)imageR[pos+IMAGE_BUFFER_SIZE/2]>meanR)){
+			if(((float)imageB[pos+IMAGE_BUFFER_SIZE/2]<0.7*meanB) && ((float)imageR[pos+IMAGE_BUFFER_SIZE/2]>1.1*meanR)){
 				setEtat(ETAT_GAMEHINT);//if the middle of the line contains red
 			}
 			else if(((float)imageB[pos+IMAGE_BUFFER_SIZE/2]>0.9*meanB) && ((float)imageR[pos+IMAGE_BUFFER_SIZE/2]<0.8*meanR) && !getIgnoreScan()){
 				setEtat(ETAT_SCAN);//if the middle of the line contains blue
-				if(getTurnCounter()!=0 || !getsoloMode()) set_body_led(ON);
+				if(getTurnCounter()!=0 || !getSoloMode()) set_body_led(ON);
 			}
 		}
 		else if(getEtat()==ETAT_SCAN && getObjectInFront() && getReadytoScan()){
@@ -225,6 +229,7 @@ static THD_FUNCTION(ProcessImage, arg) {
 			SendUint8ToComputer(imageR, IMAGE_BUFFER_SIZE);
 		}
 		envoi = !envoi;*/
+		chprintf((BaseSequentialStream *)&SD3, "% Temps ProcessImage = %-7d\r\n", chVTGetSystemTime()-time);
     }
 }
 

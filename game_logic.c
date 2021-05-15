@@ -10,9 +10,6 @@
 #define CODING_TURN				0
 #define FIRST_GUESSING_TURN		1
 #define GUESSING_TURN			2
-#define GAME_CONTINUES			0
-#define GAME_WON				1
-#define GAME_OVER				2
 
 #define MAX_NUM_TURN	 		8
 #define NUMBER_OF_PINS			3

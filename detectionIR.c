@@ -30,8 +30,10 @@ static THD_FUNCTION(DetectionIR, arg) {
 
     int calibration_front=get_prox(FRONT_PROX_SENSOR);
     int calibration_back=get_prox(BACK_PROX_SENSOR);
+    systime_t time;
 
     while(1){
+        time=chVTGetSystemTime();
     		if(getEtat()==ETAT_PAUSE && ((get_prox(BACK_PROX_SENSOR)-calibration_back) > MIN_DIST_PROX)){
     			compteurBack++;
     		}
@@ -64,6 +66,7 @@ static THD_FUNCTION(DetectionIR, arg) {
     	    else{
     	    		set_led(LED7,0);
     	    }*/
+    		chprintf((BaseSequentialStream *)&SD3, "% Temps detectionIR = %-7d\r\n", chVTGetSystemTime()-time);
     		chThdSleepMilliseconds(200);
     	}
 }

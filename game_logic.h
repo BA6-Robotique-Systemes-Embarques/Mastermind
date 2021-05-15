@@ -2,12 +2,16 @@
 #define GAME_LOGIC_H
 
 //Cards' color code, equivalent to their symbol:
-#define COLOR_RED_GREEN 0
-#define COLOR_GREEN_RED 1
-#define COLOR_RED_BLUE 2
-#define COLOR_BLUE_RED 3
-#define COLOR_RED_RED 4
-#define COLOR_WRONG 5
+#define COLOR_RED_GREEN	 	0
+#define COLOR_GREEN_RED	 	1
+#define COLOR_RED_BLUE		2
+#define COLOR_BLUE_RED 		3
+#define COLOR_RED_RED 		4
+#define COLOR_WRONG 			5
+
+#define GAME_CONTINUES			0
+#define GAME_WON					1
+#define GAME_OVER				2
 
 typedef struct {
 	uint8_t pin1; //number between 0 and 4 for each color
