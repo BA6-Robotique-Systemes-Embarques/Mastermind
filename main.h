@@ -5,6 +5,10 @@
 extern "C" {
 #endif
 
+#define OFF 0
+#define ON 1
+#define TOGGLE 2
+
 #include "camera/dcmi_camera.h"
 #include "msgbus/messagebus.h"
 #include "parameter/parameter.h"

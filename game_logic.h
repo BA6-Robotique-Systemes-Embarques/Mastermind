@@ -26,8 +26,9 @@ typedef struct {
 //-----------------------GETTERS AND SETTERS-------------------------
 
 void setAttemptPin(uint8_t currentPin);//dynamically adds the card of the current pin scanned by the camera to the attempt
-void setGamecode(gameCode code); //Sets all the code that has to be guessed at once
+void setRandomGamecode(void); //Sets a code that has to be guessed randomly
 hintPins getHints(void);
+
 unsigned int getTurnCounter(void);
 void resetTurnCounter(void);
 

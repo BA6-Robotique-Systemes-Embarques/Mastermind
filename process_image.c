@@ -121,6 +121,7 @@ static THD_FUNCTION(CaptureImage, arg) {
 
     chRegSetThreadName(__FUNCTION__);
     (void)arg;
+    bool capture = true;
 
 	//Takes pixels 0 to IMAGE_BUFFER_SIZE of the line 470 + 471 (minimum 2 lines because reasons)
 	po8030_advanced_config(FORMAT_RGB565, 0, 470, IMAGE_BUFFER_SIZE, 2, SUBSAMPLING_X1, SUBSAMPLING_X1);
@@ -128,12 +129,18 @@ static THD_FUNCTION(CaptureImage, arg) {
 	dcmi_set_capture_mode(CAPTURE_ONE_SHOT);
 	dcmi_prepare();
     while(1){
-        //starts a capture
-		dcmi_capture_start();
-		//waits for the capture to be done
-		wait_image_ready();
-		//signals an image has been captured
-		chBSemSignal(&image_ready_sem);
+    	if(capture){
+    		//starts a capture
+    		dcmi_capture_start();
+    		//waits for the capture to be done
+    		wait_image_ready();
+    		//signals an image has been captured
+    		chBSemSignal(&image_ready_sem);
+    	}
+    	else {
+    		chThdYield();
+    	}
+    	capture = !capture;
     }
 }
 
@@ -192,30 +199,13 @@ static THD_FUNCTION(ProcessImage, arg) {
 			}
 			else if(((float)imageB[pos+IMAGE_BUFFER_SIZE/2]>0.9*meanB) && ((float)imageR[pos+IMAGE_BUFFER_SIZE/2]<0.8*meanR) && !getIgnoreScan()){
 				setEtat(ETAT_SCAN);//if the middle of the line contains blue
-				set_body_led(ON);
+				if(getTurnCounter()!=0 || !getsoloMode()) set_body_led(ON);
 			}
 		}
 		else if(getEtat()==ETAT_SCAN && getObjectInFront() && getReadytoScan()){
 			//Extract the colors of 2 pixels in order to find the colors of the card
 			uint8_t leftPixel[RGB] = {0};
 			uint8_t rightPixel[RGB] = {0};
-
-			/*float meanR=0;
-			float meanG=0;
-			float meanB=0;
-
-			for(uint16_t i=0; i<IMAGE_BUFFER_SIZE/4; i+=4){		//RED mean
-				meanR+=(((uint8_t)(img_buff_ptr[2*i]) & 0xF8)>>3)/2;}
-
-			for(uint16_t i=0; i<IMAGE_BUFFER_SIZE/4; i+=4){		//GREEN mean
-				meanG+= ((*(img_buff_ptr+2*i) & 0b00000111)<<3) | ((*(img_buff_ptr+2*i+1)) >>5);}
-
-			for(uint16_t i=0; i<(2*IMAGE_BUFFER_SIZE/4); i+=8){	//BLUE mean
-				meanB+=((uint8_t)img_buff_ptr[i+1] & 0x1F)/2;}
-
-			meanR/=IMAGE_BUFFER_SIZE/4;
-			meanG/=IMAGE_BUFFER_SIZE/4;
-			meanB/=IMAGE_BUFFER_SIZE/4;*/
 
 			unsigned int i = 0.3*IMAGE_BUFFER_SIZE; // left position
 			leftPixel[RED]= ((uint8_t)(img_buff_ptr[2*i]) & 0xF8)>>3;

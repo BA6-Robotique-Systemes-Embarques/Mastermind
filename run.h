@@ -7,8 +7,6 @@
 #define ETAT_PAUSE 'P'
 #define ETAT_STOP 'S'
 
-#define OFF 0
-#define ON 1
 
 void run_thd_start(void); //starts the run thread
 void starting_move(void);
@@ -22,7 +20,8 @@ bool getReadytoScan(void);
 bool getObjectInFront(void);
 bool getIgnoreScan(void);
 void setObjectInFront(bool object);
-
+void setsoloMode(bool mode);
+bool getsoloMode(void);
 void setCurrentCard(uint8_t card);
 
 #endif /* PI_REGULATOR_H */

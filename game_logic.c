@@ -4,7 +4,6 @@
 #include "hal.h"
 #include <chprintf.h>
 #include <leds.h>
-
 #include <main.h>
 #include <game_logic.h>
 
@@ -12,10 +11,10 @@
 #define FIRST_GUESSING_TURN		1
 #define GUESSING_TURN			2
 #define GAME_CONTINUES			0
-#define GAME_WON					1
+#define GAME_WON				1
 #define GAME_OVER				2
 
-#define MAX_NUM_TURN	 			8
+#define MAX_NUM_TURN	 		8
 #define NUMBER_OF_PINS			3
 
 //--------------Game data (static variables)-------------
@@ -48,7 +47,7 @@ static void guessCode (void){
 				b_key++;
 			else if ((attempt_[i]==code2break[(i+1)%3]) && (attempt_[(i+1)%3]!=code2break[(i+1)%3]))
 				w_key++;
-			else if ((attempt_[i]==code2break[(i+2)%3]) && (attempt_[(i+1)%3]!=code2break[(i+2)%3]))
+			else if ((attempt_[i]==code2break[(i+2)%3]) && (attempt_[(i+2)%3]!=code2break[(i+2)%3]))
 				w_key++;
 		}
 
@@ -67,24 +66,24 @@ static void guessCode (void){
 
 static void displayCard(uint8_t card){//displays the given card with RGB LEDs
 	if(card == COLOR_BLUE_RED){
-		set_rgb_led(LED8, 0, 0, 255);
-		set_rgb_led(LED2, 255, 0, 0);
+		set_rgb_led(LED6, 0, 0, 255);
+		set_rgb_led(LED4, 255, 0, 0);
 	}
 	else if(card ==COLOR_GREEN_RED){
-		set_rgb_led(LED8, 0, 255, 0);
-		set_rgb_led(LED2, 255, 0, 0);
+		set_rgb_led(LED6, 0, 255, 0);
+		set_rgb_led(LED4, 255, 0, 0);
 	}
 	else if(card ==COLOR_RED_BLUE){
-		set_rgb_led(LED8, 255, 0, 0);
-		set_rgb_led(LED2, 0, 0, 255);
+		set_rgb_led(LED6, 255, 0, 0);
+		set_rgb_led(LED4, 0, 0, 255);
 	}
 	else if(card == COLOR_RED_GREEN){
-		set_rgb_led(LED8, 255, 0, 0);
-		set_rgb_led(LED2,0,255,0);
+		set_rgb_led(LED6, 255, 0, 0);
+		set_rgb_led(LED4,0,255,0);
 	}
 	else if(card == COLOR_RED_RED){
-		set_rgb_led(LED8, 255, 0, 0);
-		set_rgb_led(LED2,255,0,0);
+		set_rgb_led(LED6, 255, 0, 0);
+		set_rgb_led(LED4,255,0,0);
 	}
 }
 
@@ -93,8 +92,8 @@ static void displayCard(uint8_t card){//displays the given card with RGB LEDs
 
 void setAttemptPin(uint8_t currentPin){
 	if (turnCounter==CODING_TURN){
-		displayCard(currentPin);
-		//chprintf((BaseSequentialStream *)&SD3, "% Current pin for code :  %-7d\r\n", currentPin);
+		//displayCard(currentPin);
+		chprintf((BaseSequentialStream *)&SD3, "% Current pin for code :  %-7d\r\n", currentPin);
 		switch (pin_num_from_attempt+1) {
 		case 1:
 			code2break[pin_num_from_attempt]=currentPin;
@@ -122,7 +121,7 @@ void setAttemptPin(uint8_t currentPin){
 	}
 	else if(turnCounter==FIRST_GUESSING_TURN){
 		displayCard(currentPin);
-		//chprintf((BaseSequentialStream *)&SD3, "% Current pin for first guess :  %-7d\r\n", currentPin);
+		chprintf((BaseSequentialStream *)&SD3, "% Current pin for first guess :  %-7d\r\n", currentPin);
 		switch (pin_num_from_attempt+1){
 		case 1:
 			attempt.pin3=currentPin;
@@ -141,7 +140,7 @@ void setAttemptPin(uint8_t currentPin){
 	}
 	else if (turnCounter>=GUESSING_TURN){
 		displayCard(currentPin);
-		//chprintf((BaseSequentialStream *)&SD3, "% Current pin for guesses :  %-7d\r\n", currentPin);
+		chprintf((BaseSequentialStream *)&SD3, "% Current pin for guesses :  %-7d\r\n", currentPin);
 		switch (pin_num_from_attempt+1) {
 		case 1:
 			attempt.pin1=currentPin;
@@ -165,30 +164,11 @@ hintPins getHints(void){
 	return key;
 }
 
-/*void setAttempt(uint8_t pin1, uint8_t pin2, uint8_t pin3){
-	if(pin1>=COLOR_RED_RED && pin2>=COLOR_RED_RED && pin3>=COLOR_RED_RED &&
-		pin1 <= COLOR_RED_BLUE && pin2 <= COLOR_RED_BLUE && pin3 <= COLOR_RED_BLUE){
-		attempt.pin1=pin1;
-		attempt.pin2=pin2;
-		attempt.pin3=pin3;
-	}
-	guessCode();
-}*/
-
-/*void setGamecode(gameCode code){//used for initializing a full code2break without scanning
-	code2break[0] = code.pin1;
-	code2break[1] = code.pin2;
-	code2break[2] = code.pin3;
-
-	//autres initialisations :
-	key.b_key=0;
-	key.w_key=0;
-	key.victory_state=0;
-
-	attempt.pin1 =0;
-	attempt.pin2 =0;
-	attempt.pin3 =0;
-}*/
+void setGamecode(uint8_t pin1_, uint8_t pin2_, uint8_t pin3_){//used for initializing a full code2break without scanning
+	code2break[0] = pin1_;
+	code2break[1] = pin2_;
+	code2break[2] = pin3_;
+}
 
 unsigned int getTurnCounter(void){
 	return turnCounter;
@@ -197,4 +177,14 @@ unsigned int getTurnCounter(void){
 void resetTurnCounter(){
 	pin_num_from_attempt=0;
 	turnCounter=0;
+}
+
+void setRandomGamecode(void){
+	uint32_t randomNum = chVTGetSystemTime(); //SystemTime is our basis for randomness
+	uint8_t increment = randomNum%20;
+	uint8_t pin1 = increment%5;
+	uint8_t pin2 = (2*increment)%5;
+	uint8_t pin3 = (increment%10)/2;
+
+	setGamecode(pin1, pin2, pin3);
 }
