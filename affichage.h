@@ -8,7 +8,7 @@
 #ifndef AFFICHAGE_H_
 #define AFFICHAGE_H_
 
-void display_start(void);
+void display_thd_start(void);
 
 
 

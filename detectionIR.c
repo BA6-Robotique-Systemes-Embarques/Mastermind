@@ -16,16 +16,19 @@
 #include <run.h>
 
 #define FRONT_PROX_SENSOR	0
-#define BACK_PROX_SENSOR	3
+#define BACK_PROX_SENSOR		3
 
 #define MIN_DIST_PROX		50
 #define MIN_DIST_PROX_CARD	50
 
-#define FRONT_PROX_TIME		9
-#define BACK_PROX_TIME		4
+#define FRONT_PROX_CNT		9
+#define BACK_PROX_CNT		4
+
+
+//---------------------THREAD---------------------
 
 static THD_WORKING_AREA(waDetectionIR, 256);
-static THD_FUNCTION(DetectionIR, arg) {
+static THD_FUNCTION(DetectionIR, arg){
 
     chRegSetThreadName(__FUNCTION__);
     (void)arg;
@@ -42,18 +45,18 @@ static THD_FUNCTION(DetectionIR, arg) {
     	if(getEtat()==ETAT_PAUSE && ((get_prox(BACK_PROX_SENSOR)-calibration_back) > MIN_DIST_PROX)){
     		compteurBack++;
     	}
-    	if(compteurBack>BACK_PROX_TIME){
-    		compteurBack=0;//The hand needs to be kept close to the sensor for at least 1 second
-    		setEtat(ETAT_FOLLOW);
+    	if(compteurBack>BACK_PROX_CNT){
+    		compteurBack=0;
+    		setEtat(ETAT_FOLLOW);//The hand needs to be kept close to the sensor for at least 1 second
     	}
 
-    	//Makes sure that a card is in front of the robot when scanning
+    	//Makes sure that a card is in front of the robot when scanning:
     	if(getEtat()==ETAT_SCAN && ((get_prox(FRONT_PROX_SENSOR)-calibration_front) > MIN_DIST_PROX_CARD)){
     		compteurFront++;
     	}
-    	if(compteurFront>FRONT_PROX_TIME){
-    		setObjectInFront(true);
-    		compteurFront=0;//The card needs to remain in front of the robot for at least 2 seconds
+    	if(compteurFront>FRONT_PROX_CNT){
+    		compteurFront=0;
+    		setObjectInFront(true);//The card needs to remain in front of the robot for at least 2 seconds
     	}
     	chThdSleepUntilWindowed(time, time + MS2ST(200));
     }

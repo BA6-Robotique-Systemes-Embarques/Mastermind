@@ -15,20 +15,21 @@
 #define ETAT_STOP 'S'
 
 
-void run_thd_start(void); //starts the run thread
+void run_thd_start(void); // Starts the run thread
 void starting_move(void);
 void stopMotors(void);
 
-//Getters and setters :
+//-----------------------GETTERS AND SETTERS-------------------------
+
 char getEtat(void);
 void setEtat(char c);
 
 bool getReadytoScan(void);
 bool getObjectInFront(void);
-bool getIgnoreScan(void);
 void setObjectInFront(bool object);
-void setSoloMode(bool mode);
+bool getIgnoreScan(void);
 bool getSoloMode(void);
+void setSoloMode(bool mode);
 void setCurrentCard(uint8_t card);
 
 #endif /* PI_REGULATOR_H */

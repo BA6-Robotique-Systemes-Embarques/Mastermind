@@ -35,6 +35,7 @@ static void LEDs_update(const uint8_t *out){
 	out[0] ? set_led(LED1,OFF) : set_led(LED1,ON);
 }
 
+//---------------------THREAD---------------------
 
 static THD_WORKING_AREA(waDisplay, 256);
 static THD_FUNCTION(Display, arg){
@@ -113,7 +114,7 @@ static THD_FUNCTION(Display, arg){
     }
 }
 
-void display_start(void){
+void display_thd_start(void){
 	chThdCreateStatic(waDisplay, sizeof(waDisplay), NORMALPRIO-1, Display, NULL);
 }
 

@@ -11,6 +11,7 @@
 #include "hal.h"
 #include <chprintf.h>
 #include <leds.h>
+
 #include <main.h>
 #include <game_logic.h>
 
@@ -18,25 +19,23 @@
 #define FIRST_GUESSING_TURN		1
 #define GUESSING_TURN			2
 
-#define MAX_NUM_TURN	 		8
+#define MAX_NUM_TURN	 			8
 #define NUMBER_OF_PINS			3
 
 //--------------Game data (static variables)-------------
-static unsigned int turnCounter = 0; // coding of the code2break is counted as a turn !
+static uint8_t turnCounter = 0; 		//Coding of the code2break is counted as a turn !
 static uint8_t code2break[NUMBER_OF_PINS];
-static hintPins key;
-static gameCode attempt;
-static uint8_t pin_num_from_attempt = 0;
+static hintPins key;							//The hints calculated by the e-puck2 given the player's attempt
+static gameCode attempt;						//The player's attempt
+static uint8_t pin_num_from_attempt = 0;		//Keeps track of the code's pin that is considered (0, 1 or 2)
 
 
 //Function called after each codebreaker attempt to guess the gamecode
-//Updates the key given an attempt and a code2break
-static void guessCode (void){
+//-->updates the key given an attempt and a code2break
+static void guessCode(void){
 	turnCounter++;
 
-	if (turnCounter > MAX_NUM_TURN+1) {
-		key.victory_state=GAME_OVER;
-	}
+	if (turnCounter > MAX_NUM_TURN+1) key.victory_state=GAME_OVER;
 	else{
 		uint8_t b_key = 0; //good color good position
 		uint8_t w_key = 0; //good color wrong position
@@ -96,7 +95,7 @@ static void displayCard(uint8_t card){//displays the given card with RGB LEDs
 
 void setAttemptPin(uint8_t currentPin){
 	if (turnCounter==CODING_TURN){
-		//displayCard(currentPin);
+		//The code can be monitored via Bluetooth:
 		chprintf((BaseSequentialStream *)&SD3, "% Current pin for code :  %-7d\r\n", currentPin);
 		switch (pin_num_from_attempt+1) {
 		case 1:
@@ -111,10 +110,10 @@ void setAttemptPin(uint8_t currentPin){
 			code2break[pin_num_from_attempt]=currentPin;
 			pin_num_from_attempt=0;
 
-			//other initialisations :
+			//Other initialisations :
 			key.b_key=0;
 			key.w_key=0;
-			key.victory_state=0;
+			key.victory_state=GAME_CONTINUES;
 
 			attempt.pin1 =0;
 			attempt.pin2 =0;
@@ -125,6 +124,7 @@ void setAttemptPin(uint8_t currentPin){
 	}
 	else if(turnCounter==FIRST_GUESSING_TURN){
 		displayCard(currentPin);
+		//The first attempt can also be monitored via Bluetooth:
 		chprintf((BaseSequentialStream *)&SD3, "% Current pin for first guess :  %-7d\r\n", currentPin);
 		switch (pin_num_from_attempt+1){
 		case 1:
@@ -144,6 +144,7 @@ void setAttemptPin(uint8_t currentPin){
 	}
 	else if (turnCounter>=GUESSING_TURN){
 		displayCard(currentPin);
+		//The attempts can also be monitored via Bluetooth:
 		chprintf((BaseSequentialStream *)&SD3, "% Current pin for guesses :  %-7d\r\n", currentPin);
 		switch (pin_num_from_attempt+1) {
 		case 1:
@@ -168,14 +169,14 @@ hintPins getHints(void){
 	return key;
 }
 
-//used for initializing a full code2break without scanning
+//Used for initializing a code2break without scanning (solo mode):
 void setGamecode(uint8_t pin1_, uint8_t pin2_, uint8_t pin3_){
 	code2break[0] = pin1_;
 	code2break[1] = pin2_;
 	code2break[2] = pin3_;
 }
 
-unsigned int getTurnCounter(void){
+uint8_t getTurnCounter(void){
 	return turnCounter;
 }
 
