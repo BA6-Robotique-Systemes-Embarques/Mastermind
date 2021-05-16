@@ -1,9 +1,13 @@
+/*
+ * run.c
+ *
+ *  Created on: 20 April 2021
+ *      Author: Cyril Monette
+ */
 #include "ch.h"
 #include "hal.h"
 #include <math.h>
 #include <usbcfg.h>
-#include <chprintf.h>
-
 
 #include <main.h>
 #include <motors.h>
@@ -16,6 +20,7 @@
 #define SPEED_BASE 						400 //la vitesse nominale des moteurs
 #define POSITION_MOTEUR_CHAMP_VISION 	770 //Distance seen by the camera converted into motor position
 #define POSITION_MOTEUR_ROTATION180 	660
+
 #define RIGHT 0
 #define LEFT 1
 
@@ -141,9 +146,7 @@ static THD_FUNCTION(Run, arg) {
     float erreur_precedente=0;
     float erreurtot=0;
 
-    //float Kp=2.8;
     float Kp=2;
-    //float Ki=0.011;
     float Ki=0.04;
     float Kd=0;
 
@@ -151,59 +154,57 @@ static THD_FUNCTION(Run, arg) {
         time = chVTGetSystemTime();
 
         if(etat==ETAT_FOLLOW){
-        		erreur=getPos(); //Error between -320 and 320
-        		erreurtot+=erreur;
+        	erreur=getPos(); //Error between -320 and 320
+        	erreurtot+=erreur;
 
-        		if(erreurtot>700.)       erreurtot= 700.;	//Anti Wind-up
-        		else if(erreurtot<-700.) erreurtot=-700.;	//Anti Wind-up
+        	if(erreurtot>700.)       erreurtot= 700.;	//Anti Wind-up
+        	else if(erreurtot<-700.) erreurtot=-700.;	//Anti Wind-up
 
-        		speedR = SPEED_BASE-(Kp*erreur+Ki*erreurtot+Kd*(erreur-erreur_precedente));
-        		speedL = SPEED_BASE+(Kp*erreur+Ki*erreurtot+Kd*(erreur-erreur_precedente));
+        	speedR = SPEED_BASE-(Kp*erreur+Ki*erreurtot+Kd*(erreur-erreur_precedente));
+        	speedL = SPEED_BASE+(Kp*erreur+Ki*erreurtot+Kd*(erreur-erreur_precedente));
 
-        		right_motor_set_speed(speedR);
-        		left_motor_set_speed(speedL);
+        	right_motor_set_speed(speedR);
+        	left_motor_set_speed(speedL);
 
-        		erreur_precedente=erreur;
+        	erreur_precedente=erreur;
         }
 
         else if(etat==ETAT_SCAN){
-        		if(getTurnCounter()==0 && soloMode){
-        			move_dist(POSITION_MOTEUR_CHAMP_VISION/2);
-        			setAttemptPin(0);
-        			if(getTurnCounter()==1 && soloMode) setRandomGamecode();
+        	if(getTurnCounter()==0 && soloMode){
+        		move_dist(POSITION_MOTEUR_CHAMP_VISION/2);
+        		setAttemptPin(0);
+        		if(getTurnCounter()==1 && soloMode) setRandomGamecode();
+        	}
+        	else if((getTurnCounter()==0 || getTurnCounter()==1)) //cards are to the right during first 6 scans
+        		scan_move(RIGHT);
+        	else if (getTurnCounter()>1){ //cards are to the left when the robot scans from the red spot (PAUSE)
+        		unsigned int TC_beforeScan = getTurnCounter();
+        		scan_move(LEFT);
+        		//Moves back to pause spot once the 3 cards have been scanned
+        		if (TC_beforeScan!=getTurnCounter()){
+        			turnAround_move();
+        			ignoreSCAN = true;
         		}
-        		else if((getTurnCounter()==0 || getTurnCounter()==1)) //cards are to the right during first 6 scans
-        			scan_move(RIGHT);
-        		else if (getTurnCounter()>1){ //cards are to the left when the robot scans from the red spot (PAUSE)
-        			unsigned int TC_beforeScan = getTurnCounter();
-        			scan_move(LEFT);
-        			//Moves back to pause spot once the 3 cards have been scanned
-        			if (TC_beforeScan!=getTurnCounter()){
-        				turnAround_move();
-        				ignoreSCAN = true;
-        			}
-        		}
+        	}
 
-        		//reset PID :
-        		erreur_precedente=0;
-        		erreurtot=0;
+        	//reset PID :
+        	erreur_precedente=0;
+        	erreurtot=0;
 
-        		set_body_led(OFF);
-        		etat=ETAT_FOLLOW;
+        	etat=ETAT_FOLLOW;
         }
 
         else if(etat==ETAT_GAMEHINT){
-        		break_move();
+        	break_move();
 
-        		ignoreSCAN = false; //turns back on the ability to detect scanning spots
+        	ignoreSCAN = false; //turns back on the ability to detect scanning spots
 
-        		//reset PID :
-        		erreur_precedente=0;
-        		erreurtot=0;
+        	//reset PID :
+        	erreur_precedente=0;
+        	erreurtot=0;
 
-        		etat=ETAT_PAUSE;
+        	etat=ETAT_PAUSE;
         }
-        chprintf((BaseSequentialStream *)&SD3, "% Temps run = %d\r\n", chVTGetSystemTime()-time);
         //100 Hz :
         chThdSleepUntilWindowed(time, time + MS2ST(10));
     }
@@ -212,7 +213,6 @@ static THD_FUNCTION(Run, arg) {
 void run_thd_start(void){
 	chThdCreateStatic(waRun, sizeof(waRun), NORMALPRIO, Run, NULL);
 }
-
 
 //-------------------------GETTERS AND SETTERS----------------------------
 char getEtat(void){
@@ -242,7 +242,6 @@ bool getReadytoScan(void){
 }
 
 void setCurrentCard(uint8_t card){
-	//chprintf((BaseSequentialStream *)&SDU1, "% Card = %-7d\r\n", card);
 	if(card != COLOR_WRONG){
 		currentCard = card;
 		cardScanned=true;

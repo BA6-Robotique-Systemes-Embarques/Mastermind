@@ -4,19 +4,19 @@
  *  Created on: 29 April 2021
  *      Author: Cyril Monette
  */
-
 #include "ch.h"
 #include "hal.h"
 #include <math.h>
 #include <usbcfg.h>
-#include <chprintf.h>
 #include <leds.h>
 
 #include <game_logic.h>
 #include <main.h>
 #include <run.h>
 
-static const uint8_t seq_game_over[8][4] = {
+#define STEPS_IN_SEQUENCE 8
+
+static const uint8_t seq_game_over[STEPS_IN_SEQUENCE][4] = {
 	{0, 0, 0, 1}, // ON1
 	{0, 0, 1, 1}, // ON3
 	{0, 1, 1, 1}, // ON5
@@ -28,10 +28,10 @@ static const uint8_t seq_game_over[8][4] = {
 };
 
 static void LEDs_update(const uint8_t *out){
-	out[3] ? set_led(LED3,0) : set_led(LED3,1);
-	out[2] ? set_led(LED5,0) : set_led(LED5,1);
-	out[1] ? set_led(LED7,0) : set_led(LED7,1);
-	out[0] ? set_led(LED1,0) : set_led(LED1,1);
+	out[3] ? set_led(LED3,OFF) : set_led(LED3,ON);
+	out[2] ? set_led(LED5,OFF) : set_led(LED5,ON);
+	out[1] ? set_led(LED7,OFF) : set_led(LED7,ON);
+	out[0] ? set_led(LED1,OFF) : set_led(LED1,ON);
 }
 
 
@@ -60,7 +60,7 @@ static THD_FUNCTION(Display, arg){
     			else if(hintpins.victory_state==GAME_OVER){
     				LEDs_update(seq_game_over[sequence_pos]);
     				sequence_pos++;
-    				sequence_pos %=8;
+    				sequence_pos %= STEPS_IN_SEQUENCE;
     				setEtat(ETAT_STOP);
     			}
     			else{
@@ -113,6 +113,6 @@ static THD_FUNCTION(Display, arg){
 }
 
 void display_start(void){
-	chThdCreateStatic(waDisplay, sizeof(waDisplay), NORMALPRIO, Display, NULL);
+	chThdCreateStatic(waDisplay, sizeof(waDisplay), NORMALPRIO-1, Display, NULL);
 }
 

@@ -1,3 +1,9 @@
+/*
+ * game_logic.c
+ *
+ *  Created on: 20 April 2021
+ *      Author: Emile Chevrel
+ */
 #include <stdio.h>
 #include <string.h>
 #include "ch.h"
@@ -161,7 +167,8 @@ hintPins getHints(void){
 	return key;
 }
 
-void setGamecode(uint8_t pin1_, uint8_t pin2_, uint8_t pin3_){//used for initializing a full code2break without scanning
+//used for initializing a full code2break without scanning
+void setGamecode(uint8_t pin1_, uint8_t pin2_, uint8_t pin3_){
 	code2break[0] = pin1_;
 	code2break[1] = pin2_;
 	code2break[2] = pin3_;
@@ -178,6 +185,7 @@ void resetTurnCounter(){
 
 void setRandomGamecode(void){
 	uint32_t randomNum = chVTGetSystemTime(); //SystemTime is our basis for randomness
+	//This is a system to get semi-random pins
 	uint8_t increment = randomNum%20;
 	uint8_t pin1 = increment%5;
 	uint8_t pin2 = (2*increment)%5;

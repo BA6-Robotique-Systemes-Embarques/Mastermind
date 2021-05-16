@@ -1,3 +1,9 @@
+/*
+ * main.c
+ *
+ *  Created on: 15 April 2021
+ *      Author: Emile Chevrel
+ */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -10,7 +16,7 @@
 #include <usbcfg.h>
 #include <motors.h>
 #include <camera/po8030.h>
-#include <chprintf.h>
+
 #include <sensors/proximity.h>
 #include <leds.h>
 #include <selector.h>
@@ -34,13 +40,6 @@ CONDVAR_DECL(bus_condvar);
 
 parameter_namespace_t parameter_root, aseba_ns;
 
-
-void SendUint8ToComputer(uint8_t* data, uint16_t size){
-	chSequentialStreamWrite((BaseSequentialStream *)&SD3, (uint8_t*)"START", 5);
-	chSequentialStreamWrite((BaseSequentialStream *)&SD3, (uint8_t*)&size, sizeof(uint16_t));
-	chSequentialStreamWrite((BaseSequentialStream *)&SD3, (uint8_t*)data, size);
-}
-
 static void serial_start(void){
 	static SerialConfig ser_cfg = {
 	    115200,
@@ -48,7 +47,6 @@ static void serial_start(void){
 	    0,
 	    0,
 	};
-
 	sdStart(&SD3, &ser_cfg); // UART3.
 }
 
@@ -74,6 +72,7 @@ int main(void){
 
     serial_start();//Starts the serial communication
     usb_start();//Starts the USB communication
+
     //Starts the camera :
     dcmi_start();
 	po8030_start();
@@ -84,35 +83,34 @@ int main(void){
 
 	uint8_t selector=0, old_selector=0;
     while (1) {
-    		selector= get_selector();
-    		if(selector != old_selector && selector == START_GAME){ //First start
-    			old_selector=selector;
-    			//starting_move();
-    			initializeThreads();
-    		}
-    		else if(selector != old_selector && selector == STOP_GAME){ //Stops the threads
-    			old_selector=selector;
-    			setEtat(ETAT_STOP);
-    			stopMotors();
-    			set_body_led(0);
-    			set_rgb_led(LED4, 0, 0, 0);//Clears the RGB LEDs
-    			set_rgb_led(LED6, 0, 0, 0);
-    		}
-    		else if(selector != old_selector && selector == RESTART_GAME){ //Restart
-    			old_selector=selector;
-    			resetTurnCounter();
-    			starting_move();
-    			setEtat(ETAT_FOLLOW);
-    		}
-    		if(selector != old_selector && selector == SOLO_GAME){
-    			old_selector=selector;
+    	selector= get_selector();
+    	if(selector != old_selector && selector == START_GAME){ //First start
+    		old_selector=selector;
+    		starting_move();
+    		initializeThreads();
+    	}
+    	else if(selector != old_selector && selector == STOP_GAME){ //Stops the threads
+    		old_selector=selector;
+    		setEtat(ETAT_STOP);
+    		stopMotors();
+    		set_body_led(OFF);
+    		set_rgb_led(LED4, 0, 0, 0);//Clears the RGB LEDs
+    		set_rgb_led(LED6, 0, 0, 0);
+    	}
+    	else if(selector != old_selector && selector == RESTART_GAME){ //Restart
+    		old_selector=selector;
+    		resetTurnCounter();
+    		starting_move();
+    		setEtat(ETAT_FOLLOW);
+    	}
+    	if(selector != old_selector && selector == SOLO_GAME){//Play with a randomly generated code by the robot
+    		old_selector=selector;
 
-    			setSoloMode(true);
-    			starting_move();
-    			initializeThreads();
-    		}
-
-        chThdSleepMilliseconds(1000); //Waits 1 second
+    		setSoloMode(true);
+    		starting_move();
+    		initializeThreads();
+    	}
+    	chThdSleepMilliseconds(1000); //Waits 1 second
     }
 }
 

@@ -1,6 +1,11 @@
+/*
+ *  process_image.c
+ *
+ *  Created on: 20 April 2021
+ *      Author: Emile Chevrel
+ */
 #include "ch.h"
 #include "hal.h"
-#include <chprintf.h>
 #include <usbcfg.h>
 
 #include <main.h>
@@ -13,11 +18,14 @@
 
 #define IMAGE_BUFFER_SIZE		640
 
+#define LEFT_COEF	0.3
+#define RIGHT_COEF	0.7
+
 static int pos; //Center of the black line, relative to the middle of the image (pixel N° 320)
 
 
 //---------------Image Calculations---------------
-int pos_width(uint8_t* image, float mean){
+static int findPosition(uint8_t* image, float mean){
 	int left=0; //left and right points defining the width of the black line
 	int right=0;
 
@@ -40,63 +48,6 @@ int pos_width(uint8_t* image, float mean){
 	}
 	else return 0;
 }
-
-/*uint8_t colorOfPixel(uint8_t* Pixel){
-	bool redB=0, greenB=0, blueB=0;
-
-	uint8_t mean=(Pixel[RED]+Pixel[GREEN]+Pixel[BLUE])/3;
-
-	if (Pixel[RED]>mean) redB=true;
-	if (Pixel[GREEN]>mean) greenB=true;
-	if (Pixel[BLUE]>mean) blueB=true;
-
-	if (redB && greenB){
-		if (Pixel[RED]>Pixel[GREEN]) return RED;
-		else return GREEN;
-	}
-
-	if (redB && blueB){
-		if (Pixel[RED]>Pixel[BLUE]) return RED;
-		else return BLUE;
-	}
-
-	if (blueB && greenB){
-		if (Pixel[BLUE]>Pixel[GREEN]) return BLUE;
-		else return GREEN;
-	}
-
-	if (redB) return RED;
-	else if (greenB) return GREEN;
-	else if (blueB) return BLUE;
-	else return RED;			//ARBITRARY COLOR, THIS RETURN IS IF NO COLOR WAS DETECTED
-}
-
-uint8_t colorOfCard(uint8_t* Pixel1, uint8_t* Pixel2){
-	uint8_t leftColor=colorOfPixel(Pixel1);
-	uint8_t rightColor=colorOfPixel(Pixel2);
-	if (leftColor==RED && rightColor==GREEN){
-		return COLOR_RED_GREEN;
-		//set_rgb_led(LED2, 255, 255, 0);
-	}
-	else if (leftColor==GREEN && rightColor==RED){
-		return COLOR_GREEN_RED;
-		//set_rgb_led(LED2, 255, 255, 0);
-	}
-	else if (leftColor==RED && rightColor==BLUE){
-		return COLOR_RED_BLUE;
-		//set_rgb_led(LED2, 255, 0, 255);
-	}
-	else if (leftColor==BLUE && rightColor==RED){
-		return COLOR_BLUE_RED;
-		//set_rgb_led(LED2, 255, 0, 255);
-	}
-	else if(Pixel1[RED]-Pixel2[RED]<5 && Pixel1[GREEN]-Pixel2[GREEN]<5 && Pixel1[BLUE]-Pixel2[BLUE]<5){
-		return COLOR_RED_RED;//si on observe une cloche pour les 3 couleurs
-	}
-	else{
-		return COLOR_WRONG;
-	}
-}*/
 
 uint8_t colorOfCard(uint8_t* Pixel1, uint8_t* Pixel2){
 	uint8_t mean1=(Pixel1[RED]+Pixel1[GREEN]+Pixel1[BLUE])/3;
@@ -122,7 +73,6 @@ static THD_FUNCTION(CaptureImage, arg) {
     chRegSetThreadName(__FUNCTION__);
     (void)arg;
     bool capture = true;
-    systime_t time;
 
 	//Takes pixels 0 to IMAGE_BUFFER_SIZE of the line 470 + 471
 	po8030_advanced_config(FORMAT_RGB565, 0, 470, IMAGE_BUFFER_SIZE, 2, SUBSAMPLING_X1, SUBSAMPLING_X1);
@@ -131,7 +81,6 @@ static THD_FUNCTION(CaptureImage, arg) {
 	dcmi_prepare();
     while(1){
     		if(capture){
-    			time = chVTGetSystemTime();
     			//starts a capture
     			dcmi_capture_start();
     			//waits for the capture to be done
@@ -139,7 +88,6 @@ static THD_FUNCTION(CaptureImage, arg) {
     			//signals an image has been captured
 
     			chBSemSignal(&image_ready_sem);
-    	        chprintf((BaseSequentialStream *)&SD3, "% Temps CaptureImage = %d\r\n", chVTGetSystemTime()-time);
     		}
     		else chThdYield();
     		capture = !capture;
@@ -157,13 +105,9 @@ static THD_FUNCTION(ProcessImage, arg) {
 	uint8_t imageR[IMAGE_BUFFER_SIZE] = {0};
 	uint8_t imageG[IMAGE_BUFFER_SIZE] = {0};
 	uint8_t imageB[IMAGE_BUFFER_SIZE] = {0};
-	systime_t time;
-	//bool envoi =0; //used when sending camera sensor information to the computer
-
 
     while(1){
         chBSemWait(&image_ready_sem); //waits until an image has been captured
-        time=chVTGetSystemTime();
 
 		img_buff_ptr = dcmi_get_last_image_ptr(); //gets the pointer to the array filled with the last image in RGB565
 
@@ -196,7 +140,7 @@ static THD_FUNCTION(ProcessImage, arg) {
 			meanG/=IMAGE_BUFFER_SIZE;
 			meanB/=IMAGE_BUFFER_SIZE;
 
-			pos=pos_width(imageG, meanG); //finds the position of the black line uing the green information
+			pos=findPosition(imageG, meanG); //finds the position of the black line uing the green information
 
 			if(((float)imageB[pos+IMAGE_BUFFER_SIZE/2]<0.7*meanB) && ((float)imageR[pos+IMAGE_BUFFER_SIZE/2]>1.1*meanR)){
 				setEtat(ETAT_GAMEHINT);//if the middle of the line contains red
@@ -211,12 +155,12 @@ static THD_FUNCTION(ProcessImage, arg) {
 			uint8_t leftPixel[RGB] = {0};
 			uint8_t rightPixel[RGB] = {0};
 
-			unsigned int i = 0.3*IMAGE_BUFFER_SIZE; // left position
+			unsigned int i = LEFT_COEF * IMAGE_BUFFER_SIZE; // left position
 			leftPixel[RED]= ((uint8_t)(img_buff_ptr[2*i]) & 0xF8)>>3;
 			leftPixel[GREEN] = (((*(img_buff_ptr+2*i) & 0b00000111)<<3) | ((*(img_buff_ptr+2*i+1)) >>5))/2;
 			leftPixel[BLUE] = (uint8_t)img_buff_ptr[(2*i)+1]&0x1F;
 
-			i = 0.7*IMAGE_BUFFER_SIZE; // right position
+			i = RIGHT_COEF * IMAGE_BUFFER_SIZE; // right position
 			rightPixel[RED]=((uint8_t)(img_buff_ptr[2*i]) & 0xF8)>>3;
 			rightPixel[GREEN] = (((*(img_buff_ptr+2*i) & 0b00000111)<<3) | ((*(img_buff_ptr+2*i+1)) >>5))/2;
 			rightPixel[BLUE] = (uint8_t)img_buff_ptr[(2*i)+1] & 0x1F;
@@ -224,12 +168,6 @@ static THD_FUNCTION(ProcessImage, arg) {
 			//send the color information to run module
 			setCurrentCard(colorOfCard(leftPixel, rightPixel));
 		}
-		//affichage ordinateur :
-		/*if(envoi){
-			SendUint8ToComputer(imageR, IMAGE_BUFFER_SIZE);
-		}
-		envoi = !envoi;*/
-		chprintf((BaseSequentialStream *)&SD3, "% Temps ProcessImage = %-7d\r\n", chVTGetSystemTime()-time);
     }
 }
 
