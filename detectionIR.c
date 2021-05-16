@@ -29,12 +29,15 @@ static THD_FUNCTION(DetectionIR, arg) {
     chRegSetThreadName(__FUNCTION__);
     (void)arg;
 
+    systime_t time;
     uint8_t compteurBack=0, compteurFront=0;
 
     int calibration_front=get_prox(FRONT_PROX_SENSOR);
     int calibration_back=get_prox(BACK_PROX_SENSOR);
 
     while(1){
+    	time = chVTGetSystemTime();
+
     	if(getEtat()==ETAT_PAUSE && ((get_prox(BACK_PROX_SENSOR)-calibration_back) > MIN_DIST_PROX)){
     		compteurBack++;
     	}
@@ -51,7 +54,7 @@ static THD_FUNCTION(DetectionIR, arg) {
     		setObjectInFront(true);
     		compteurFront=0;//The card needs to remain in front of the robot for at least 2 seconds
     	}
-    	chThdSleepMilliseconds(200);
+    	chThdSleepUntilWindowed(time, time + MS2ST(200));
     }
 }
 
