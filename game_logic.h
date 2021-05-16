@@ -1,3 +1,10 @@
+/*
+ * game_logic.h
+ *
+ *  Created on: 20 April 2021
+ *      Author: Emile Chevrel
+ */
+
 #ifndef GAME_LOGIC_H
 #define GAME_LOGIC_H
 

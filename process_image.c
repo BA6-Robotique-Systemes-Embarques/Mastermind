@@ -4,6 +4,7 @@
  *  Created on: 20 April 2021
  *      Author: Emile Chevrel
  */
+
 #include "ch.h"
 #include "hal.h"
 #include <usbcfg.h>

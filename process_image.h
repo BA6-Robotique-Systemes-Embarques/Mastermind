@@ -1,3 +1,10 @@
+/*
+ *  process_image.h
+ *
+ *  Created on: 20 April 2021
+ *      Author: Emile Chevrel
+ */
+
 #ifndef PROCESS_IMAGE_H
 #define PROCESS_IMAGE_H
 

@@ -4,6 +4,7 @@
  *  Created on: 20 April 2021
  *      Author: Cyril Monette
  */
+
 #include "ch.h"
 #include "hal.h"
 #include <math.h>
@@ -19,14 +20,14 @@
 
 #define SPEED_BASE 						400 //la vitesse nominale des moteurs
 #define POSITION_MOTEUR_CHAMP_VISION 	770 //Distance seen by the camera converted into motor position
-#define POSITION_MOTEUR_ROTATION180 	660
+#define POSITION_MOTEUR_ROTATION180 		660
 
 #define RIGHT 0
 #define LEFT 1
 
-#define STARTUP_BACKUP_DIST 	-1210
+#define STARTUP_BACKUP_DIST 		-1210
 #define STARTUP_BACKUP_SAFETY 	10
-#define STARTUP_BACKUP_SETUP	-400
+#define STARTUP_BACKUP_SETUP		-400
 #define SCANNING_CLOSEUP_DIST	100
 
 static char etat = ETAT_FOLLOW;
@@ -142,13 +143,8 @@ static THD_FUNCTION(Run, arg) {
     int16_t speedL = 0;
 
     //PID :
-    float erreur=0;
-    float erreur_precedente=0;
-    float erreurtot=0;
-
-    float Kp=2;
-    float Ki=0.04;
-    float Kd=0;
+    float erreur=0, erreur_precedente=0, erreurtot=0;
+    float Kp=2, Ki=0.04, Kd=0;
 
     while(1){
         time = chVTGetSystemTime();
@@ -170,20 +166,20 @@ static THD_FUNCTION(Run, arg) {
         }
 
         else if(etat==ETAT_SCAN){
-        	if(getTurnCounter()==0 && soloMode){
+        	if(getTurnCounter()==0 && soloMode){//In solo mode there is no need to scan the code2break as it is set up randomly
         		move_dist(POSITION_MOTEUR_CHAMP_VISION/2);
         		setAttemptPin(0);
         		if(getTurnCounter()==1 && soloMode) setRandomGamecode();
         	}
         	else if((getTurnCounter()==0 || getTurnCounter()==1)) //cards are to the right during first 6 scans
         		scan_move(RIGHT);
-        	else if (getTurnCounter()>1){ //cards are to the left when the robot scans from the red spot (PAUSE)
-        		unsigned int TC_beforeScan = getTurnCounter();
+        	else if (getTurnCounter()>1){ //cards are to the left when the robot scans from the red spot
+        		uint8_t TC_beforeScan = getTurnCounter();
         		scan_move(LEFT);
         		//Moves back to pause spot once the 3 cards have been scanned
         		if (TC_beforeScan!=getTurnCounter()){
-        			turnAround_move();
         			ignoreSCAN = true;
+        			turnAround_move();
         		}
         	}
 

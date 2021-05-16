@@ -4,6 +4,7 @@
  *  Created on: 20 April 2021
  *      Author: Cyril Monette
  */
+
 #include "ch.h"
 #include "hal.h"
 #include <math.h>

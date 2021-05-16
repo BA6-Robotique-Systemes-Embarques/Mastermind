@@ -1,3 +1,10 @@
+/*
+ * main.h
+ *
+ *  Created on: 15 April 2021
+ *      Author: Emile Chevrel
+ */
+
 #ifndef MAIN_H
 #define MAIN_H
 
